@@ -1,14 +1,405 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Little Project</title>
+  <meta name="theme-color" content="#fafbf7">
+  <meta name="description" content="My Little Project — fun DIY electronics kits for curious minds. Little projects. Big memories.">
+  <title>my little project_ | Build. Learn. Create.</title>
+  <style>
+    :root {
+      --ink: #152b3b;
+      --paper: #fafbf7;
+      --blue: #48c6f1;
+      --lime: #c9f46a;
+      --yellow: #ffe27c;
+      --line: #d9e3e2;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Courier New", Courier, monospace;
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(#dfe9e944 1px, transparent 1px),
+        linear-gradient(90deg, #dfe9e944 1px, transparent 1px);
+      background-size: 26px 26px;
+      line-height: 1.6;
+    }
+    a { color: inherit; }
+    .wrap { max-width: 1120px; margin: auto; padding: 0 24px; }
+    .topbar {
+      border-bottom: 2px solid var(--ink);
+      background: #fafbf7ef;
+    }
+    .nav {
+      min-height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+    .logo {
+      font-size: clamp(18px, 3vw, 25px);
+      font-weight: 900;
+      text-decoration: none;
+      letter-spacing: -1.5px;
+    }
+    .logo span { color: #0798c7; }
+    .links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .links a {
+      font-size: 12px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .btn {
+      display: inline-block;
+      border: 2px solid var(--ink);
+      background: var(--lime);
+      box-shadow: 5px 5px 0 var(--ink);
+      padding: 13px 18px;
+      font: bold 13px "Courier New", monospace;
+      text-decoration: none;
+      transition: transform .15s, box-shadow .15s;
+      cursor: pointer;
+    }
+    .btn:hover {
+      transform: translate(3px, 3px);
+      box-shadow: 2px 2px 0 var(--ink);
+    }
+    .btn.yellow { background: var(--yellow); }
+    .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: bold;
+      background: var(--yellow);
+      padding: 5px 10px;
+      border: 1px solid var(--ink);
+      transform: rotate(-2deg);
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 45px;
+      align-items: center;
+      padding-top: 90px;
+      padding-bottom: 90px;
+    }
+    h1, h2, h3 { line-height: 1.15; letter-spacing: -1.5px; }
+    h1 { font-size: clamp(46px, 7vw, 82px); margin: 22px 0; }
+    h2 { font-size: clamp(30px, 5vw, 44px); }
+    .highlight {
+      background: linear-gradient(transparent 58%, var(--lime) 58%);
+    }
+    .hero p { font-size: 16px; max-width: 480px; }
+    .hero-visual {
+      position: relative;
+      min-height: 370px;
+      border: 3px solid var(--ink);
+      background: #dff5f7;
+      box-shadow: 12px 12px 0 var(--blue);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .hero-visual svg { width: 90%; max-width: 440px; }
+    .sticker {
+      position: absolute;
+      top: 18px;
+      right: -14px;
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      padding: 9px 16px;
+      font-size: 12px;
+      font-weight: bold;
+      transform: rotate(8deg);
+    }
+    .mini-label {
+      position: absolute;
+      bottom: 14px;
+      left: 16px;
+      font-size: 11px;
+      background: white;
+      padding: 6px 9px;
+      border: 1px dashed var(--ink);
+    }
+    .benefits {
+      background: white;
+      border-top: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+    }
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      padding-top: 28px;
+      padding-bottom: 28px;
+    }
+    .benefit { font-weight: bold; font-size: 13px; }
+    .benefit b { font-size: 24px; display: block; }
+    section { scroll-margin-top: 30px; }
+    .section-pad { padding-top: 85px; padding-bottom: 85px; }
+    .section-intro { max-width: 650px; margin-bottom: 35px; }
+    .section-intro p { color: #4c606a; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+    .card {
+      border: 2px solid var(--ink);
+      background: white;
+      box-shadow: 7px 7px 0 var(--ink);
+      overflow: hidden;
+    }
+    .card-art {
+      height: 240px;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+    .card-art.blue { background: #d9f4fc; }
+    .card-art.green { background: #e9f7d6; }
+    .card-art svg { width: 78%; max-height: 200px; }
+    .tag {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--yellow);
+      border: 1px solid var(--ink);
+      padding: 5px 9px;
+      font-size: 11px;
+      font-weight: bold;
+      transform: rotate(4deg);
+    }
+    .card-body { padding: 25px; }
+    .code { font-size: 11px; color: #0789af; font-weight: bold; }
+    .card h3 { font-size: 25px; margin: 10px 0; }
+    .card p { font-size: 13px; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .step {
+      border: 2px solid var(--ink);
+      padding: 24px 18px;
+      background: white;
+    }
+    .step:nth-child(2) { background: #e6f7ff; }
+    .step:nth-child(3) { background: #f1fbdc; }
+    .step:nth-child(4) { background: #fff6d5; }
+    .number { font-size: 32px; font-weight: bold; }
+    .step h3 { font-size: 17px; }
+    .step p { font-size: 12px; }
+    .signup {
+      background: var(--ink);
+      color: white;
+      padding: 70px 24px;
+      text-align: center;
+    }
+    .signup h2 { margin-top: 0; }
+    .signup p { max-width: 580px; margin: 0 auto 25px; }
+    .about { max-width: 750px; margin: auto; text-align: center; }
+    footer {
+      border-top: 2px solid var(--ink);
+      background: white;
+      padding: 35px 0;
+      font-size: 12px;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; padding-top: 55px; gap: 35px; }
+      .hero-visual { min-height: 280px; }
+      .benefit-grid, .steps { grid-template-columns: repeat(2, 1fr); }
+      .cards { grid-template-columns: 1fr; }
+      .links { gap: 12px; }
+      .section-pad { padding-top: 60px; padding-bottom: 60px; }
+    }
+    @media (max-width: 390px) {
+      .benefit-grid, .steps { grid-template-columns: 1fr; }
+      .wrap { padding-left: 18px; padding-right: 18px; }
+    }
+  </style>
 </head>
-<body style="font-family: monospace; background: #f8fcff; padding: 40px;">
-  <h1>my little project_</h1>
-  <h2>Build. Learn. Create.</h2>
-  <p>Little projects. Big memories.</p>
-  <p>Our first DIY electronics kits are coming soon!</p>
+<body>
+
+<header class="topbar">
+  <div class="wrap nav">
+    <a class="logo" href="#home">my little project<span>_</span></a>
+    <nav class="links" aria-label="Main navigation">
+      <a href="#home">[home]</a>
+      <a href="#projects">[projects]</a>
+      <a href="#about">[about]</a>
+      <a href="#contact">[contact]</a>
+    </nav>
+    <a class="btn yellow" href="#updates">Get launch updates →</a>
+  </div>
+</header>
+
+<main>
+  <section class="wrap hero" id="home">
+    <div>
+      <span class="eyebrow">// hello, curious human!</span>
+      <h1>Build.<br>Learn.<br><span class="highlight">Create.</span></h1>
+      <p><strong>Little projects. Big memories.</strong></p>
+      <p>Awesome DIY electronics kits for curious kids, grown-ups and everyone in between. Make something brilliant, together.</p>
+      <a class="btn" href="#projects">Explore our projects →</a>
+    </div>
+
+    <div class="hero-visual">
+      <span class="sticker">MADE TO BUILD!</span>
+      <svg viewBox="0 0 440 320" role="img" aria-label="Illustration of a DIY remote-controlled buggy">
+        <g stroke="#183246" stroke-width="5" stroke-linejoin="round">
+          <path d="M105 145 L166 105 L280 105 L338 155 L320 222 L115 222 Z" fill="#b7eb50"/>
+          <path d="M163 108 L183 69 L267 69 L283 108" fill="#4dc7ee"/>
+          <rect x="154" y="126" width="136" height="65" rx="9" fill="#183246"/>
+          <rect x="170" y="137" width="105" height="44" rx="4" fill="#47d0e8" stroke-width="2"/>
+          <path d="M184 159 L206 159 L216 146 L236 174 L250 159 L266 159" stroke="#183246" fill="none" stroke-width="3"/>
+          <circle cx="125" cy="224" r="49" fill="#1b2b3b"/>
+          <circle cx="125" cy="224" r="23" fill="#dce8e8"/>
+          <circle cx="318" cy="224" r="49" fill="#1b2b3b"/>
+          <circle cx="318" cy="224" r="23" fill="#dce8e8"/>
+          <path d="M291 106 L325 86 L350 100" fill="none"/>
+          <circle cx="354" cy="97" r="7" fill="#ffe27c"/>
+          <path d="M85 162 L63 162 M82 185 L48 185 M359 165 L386 165" stroke="#0798c7"/>
+        </g>
+        <g fill="#0798c7" font-family="monospace" font-size="12">
+          <text x="40" y="85">ESP32 →</text>
+          <text x="285" y="45">↘ antenna</text>
+          <text x="180" y="305">LP-031 // RC BUGGY</text>
+        </g>
+      </svg>
+      <span class="mini-label">[ prototype mode: ON ]</span>
+    </div>
+  </section>
+
+  <div class="benefits">
+    <div class="wrap benefit-grid">
+      <div class="benefit"><b>⚡</b>Hands-on fun</div>
+      <div class="benefit"><b>✦</b>Learn real skills</div>
+      <div class="benefit"><b>♡</b>Quality time together</div>
+      <div class="benefit"><b>✓</b>Beginner friendly</div>
+    </div>
+  </div>
+
+  <section class="wrap section-pad" id="projects">
+    <div class="section-intro">
+      <span class="eyebrow">// coming soon</span>
+      <h2>Our first projects_</h2>
+      <p>We're busy prototyping, testing and making sure every kit is as fun to build as it is to use. Here's what's on the workbench.</p>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <div class="card-art blue">
+          <span class="tag">COMING SOON</span>
+          <svg viewBox="0 0 300 210" role="img" aria-label="Round flight radar display">
+            <circle cx="150" cy="105" r="88" fill="#173044" stroke="#111d28" stroke-width="10"/>
+            <circle cx="150" cy="105" r="72" fill="#082c30" stroke="#b7ef65" stroke-width="2"/>
+            <circle cx="150" cy="105" r="47" fill="none" stroke="#57ca7a" opacity=".6"/>
+            <circle cx="150" cy="105" r="24" fill="none" stroke="#57ca7a" opacity=".6"/>
+            <path d="M78 105H222 M150 33V177 M150 105L204 58" stroke="#57ca7a" opacity=".7"/>
+            <g fill="#c8f26a" font-family="monospace" font-size="13">
+              <text x="170" y="72">✈</text>
+              <text x="104" y="123">✈</text>
+              <text x="169" y="151">✈</text>
+            </g>
+            <circle cx="150" cy="105" r="5" fill="#ffe27c"/>
+            <rect x="125" y="190" width="50" height="13" rx="4" fill="#173044"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <div class="code">LP-001 // ELECTRONICS</div>
+          <h3>Little Flight Radar</h3>
+          <p>Build your own round-screen aircraft tracker and discover the planes flying above you.</p>
+          <p><strong>Build level:</strong> Curious beginner</p>
+          <a href="#updates">Get launch updates →</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-art green">
+          <span class="tag">COMING SOON</span>
+          <svg viewBox="0 0 300 210" role="img" aria-label="DIY remote-controlled buggy">
+            <g stroke="#173044" stroke-width="4" stroke-linejoin="round">
+              <path d="M45 90 L105 57 L211 57 L261 98 L241 156 L61 156 Z" fill="#b7eb50"/>
+              <rect x="104" y="76" width="104" height="55" rx="6" fill="#173044"/>
+              <rect x="115" y="86" width="82" height="35" fill="#4ac8ec"/>
+              <circle cx="83" cy="158" r="35" fill="#173044"/>
+              <circle cx="83" cy="158" r="16" fill="#e6f1f0"/>
+              <circle cx="225" cy="158" r="35" fill="#173044"/>
+              <circle cx="225" cy="158" r="16" fill="#e6f1f0"/>
+              <path d="M213 58 L237 34 L259 42" fill="none"/>
+            </g>
+            <text x="110" y="202" font-family="monospace" font-size="11" fill="#173044">BUILD → DRIVE → REPEAT</text>
+          </svg>
+        </div>
+        <div class="card-body">
+          <div class="code">LP-031 // ROBOTICS</div>
+          <h3>Little RC Buggy</h3>
+          <p>Put together your own little robot car, then take control and race it around.</p>
+          <p><strong>Build level:</strong> Curious beginner</p>
+          <a href="#updates">Get launch updates →</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap section-pad" id="how">
+    <div class="section-intro">
+      <span class="eyebrow">// how it works</span>
+      <h2>From kit to awesome_</h2>
+      <p>Simple steps. Big discoveries.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="number">01</div><h3>Get your kit</h3><p>Everything you need, thoughtfully packed together.</p></div>
+      <div class="step"><div class="number">02</div><h3>Build it</h3><p>Follow clear instructions and bring your project to life.</p></div>
+      <div class="step"><div class="number">03</div><h3>Learn new skills</h3><p>Discover the clever technology behind what you've made.</p></div>
+      <div class="step"><div class="number">04</div><h3>Enjoy and explore</h3><p>Play, experiment, improve and make it your own.</p></div>
+    </div>
+  </section>
+
+  <section class="signup" id="updates">
+    <div class="wrap">
+      <h2>Something awesome is brewing_</h2>
+      <p>Our first kits are still on the workbench. Want to know when they launch? Drop us an email and we'll keep you in the loop.</p>
+      <a class="btn yellow" href="mailto:hello@mylittleproject.co.uk?subject=Please%20let%20me%20know%20when%20the%20kits%20launch">I'm interested! →</a>
+      <p style="font-size:11px;margin-top:22px">No automated mailing list yet — this opens your email app.</p>
+    </div>
+  </section>
+
+  <section class="wrap section-pad" id="about">
+    <div class="about">
+      <span class="eyebrow">// made for curious minds</span>
+      <h2>Small builds. Big ideas.</h2>
+      <p>We believe some of the best memories start with a box of bits, a curious question and someone to build alongside.</p>
+      <p>My Little Project is a new UK-based DIY electronics kit brand, creating fun, approachable projects that make learning feel like play.</p>
+    </div>
+  </section>
+</main>
+
+<footer id="contact">
+  <div class="wrap footer-inner">
+    <div><strong>my little project_</strong><div>Little projects. Big memories.</div></div>
+    <div><a href="mailto:hello@mylittleproject.co.uk">hello@mylittleproject.co.uk</a></div>
+    <div>© <span id="year">2026</span> My Little Project</div>
+  </div>
+</footer>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+</script>
 </body>
 </html>
+
