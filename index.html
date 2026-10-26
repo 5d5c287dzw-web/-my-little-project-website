@@ -260,7 +260,16 @@
  .links { grid-column:1; grid-row:2; gap:14px; }
  .hero h1 { font-size:clamp(42px,11vw,54px); }
 }
-</style>
+
+    .signup-kicker { color:var(--lime); font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:12px!important; }
+    .signup-form { max-width:560px; margin:28px auto 0; text-align:left; }
+    .signup-note { font-size:11px; margin-top:22px!important; opacity:.85; }
+  </style>
+  <!-- MailerLite Universal: launch signup -->
+  <script>
+    (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+    ml('account','2743003');
+  </script>
 </head>
 <body>
 
@@ -402,10 +411,11 @@
 
   <section class="signup" id="updates">
     <div class="wrap">
-      <h2>Something awesome is brewing_</h2>
-      <p>Our first kits are still on the workbench. Want to know when they launch? Drop us an email and we'll keep you in the loop.</p>
-      <a class="btn yellow" href="mailto:hello@mylittleproject.co.uk?subject=Please%20let%20me%20know%20when%20the%20kits%20launch">I'm interested! →</a>
-      <p style="font-size:11px;margin-top:22px">No automated mailing list yet — this opens your email app.</p>
+      <p class="signup-kicker">// JOIN THE BUILD CREW</p>
+      <h2>Be first to build_</h2>
+      <p>Get launch updates, behind-the-scenes builds and first access to our DIY electronics kits.</p>
+      <div class="signup-form"><div class="ml-embedded" data-form="SNDM4W"></div></div>
+      <p class="signup-note">Launch updates only. Unsubscribe anytime.</p>
     </div>
   </section>
 
