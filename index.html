@@ -264,7 +264,14 @@
     .signup-kicker { color:var(--lime); font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:12px!important; }
     .signup-form { max-width:560px; margin:28px auto 0; text-align:left; }
     .signup-note { font-size:11px; margin-top:22px!important; opacity:.85; }
-  </style>
+  
+    /* Make clickable elements visually obvious on hover and keyboard focus */
+    a, button { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .btn:hover, .btn:focus-visible, .btn.yellow:hover, .btn.yellow:focus-visible { background: var(--blue); color: var(--ink); }
+    .card-body a:hover, .card-body a:focus-visible, .links a:hover, .links a:focus-visible, footer a:hover, footer a:focus-visible, .signup a:hover, .signup a:focus-visible, #projects a:not(.btn):hover, #projects a:not(.btn):focus-visible { background: var(--lime); color: var(--ink); text-decoration-thickness: 2px; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #0798c7; outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) { a, button { transition: none; } }
+</style>
   <!-- MailerLite Universal: launch signup -->
   <script>
     (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
@@ -393,6 +400,13 @@
         </div>
       </article>
     </div>
+    <div style="margin-top:32px;border:2px solid var(--ink);background:#fff7d3;padding:22px 25px;box-shadow:5px 5px 0 var(--ink)">
+      <span class="eyebrow">// LP-036 · COMING SOON</span>
+      <h3>Build &amp; Race Twin Pack_</h3>
+      <p>Two Little RC Buggy builds, two controllers and a whole lot of friendly competition.</p>
+      <a href="/projects/build-and-race-twin-pack/">Explore the Twin Pack →</a>
+    </div>
+    <p style="margin-top:26px"><a class="btn" href="/projects/">Explore all projects →</a></p>
   </section>
 
   <section class="wrap section-pad" id="how">
