@@ -271,6 +271,8 @@
     .card-body a:hover, .card-body a:focus-visible, .links a:hover, .links a:focus-visible, footer a:hover, footer a:focus-visible, .signup a:hover, .signup a:focus-visible, #projects a:not(.btn):hover, #projects a:not(.btn):focus-visible { background: var(--lime); color: var(--ink); text-decoration-thickness: 2px; }
     a:focus-visible, button:focus-visible { outline: 3px solid #0798c7; outline-offset: 3px; }
     @media (prefers-reduced-motion: reduce) { a, button { transition: none; } }
+
+.category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.category-card{background:#fff;border:2px solid var(--ink);padding:23px;box-shadow:5px 5px 0 var(--ink)}.category-icon{font-size:30px}.category-card h3{font-size:20px;margin:10px 0}.category-card p{font-size:13px}.category-card a{font-size:12px;font-weight:bold}.category-card a:hover,.category-card a:focus-visible{background:var(--lime)}.category-status{font-size:11px;color:#52646b;font-weight:bold}@media(max-width:800px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.category-grid{grid-template-columns:1fr}}
 </style>
   <!-- MailerLite Universal: launch signup -->
   <script>
@@ -311,7 +313,7 @@
       <span class="eyebrow">// hello, curious human!</span>
       <h1>Build.<br>Learn.<br><span class="highlight">Create.</span></h1>
       <p><strong>Little projects. Big memories.</strong></p>
-      <p>Awesome DIY electronics kits for curious kids, grown-ups and everyone in between. Make something brilliant, together.</p>
+      <p>Hands-on projects in electronics, robotics, miniature engineering and more. For curious kids, grown-ups and everyone in between. Make something brilliant, together.</p>
       <a class="btn" href="#projects">Explore our projects →</a>
     </div>
 
@@ -351,6 +353,12 @@
     </div>
   </div>
 
+
+  <section class="wrap section-pad" id="categories"><div class="section-intro"><span class="eyebrow">// EXPLORE WHAT'S POSSIBLE</span><h2>More ways to make_</h2><p>We're growing beyond electronics into hands-on projects for curious minds of all ages. Some ranges are still being researched — our first prototypes are shown below.</p></div><div class="category-grid"><article class="category-card"><div class="category-icon" aria-hidden="true">⚡</div><h3>Electronics & Coding</h3><p>Circuits, clever displays and coding projects — including our Little Flight Radar.</p><a href="/projects/little-flight-radar/">Explore Flight Radar →</a></article>
+<article class="category-card"><div class="category-icon" aria-hidden="true">🤖</div><h3>Robotics & RC</h3><p>Build moving machines, controllers and race-ready projects.</p><a href="/projects/little-rc-buggy/">Explore RC Buggy →</a></article>
+<article class="category-card"><div class="category-icon" aria-hidden="true">⚙</div><h3>Miniature Engineering</h3><p>Discover working mechanisms, gears and miniature engines. We're researching future kits.</p><span class="category-status">// RANGE IN RESEARCH</span></article>
+<article class="category-card"><div class="category-icon" aria-hidden="true">✈</div><h3>Model Building</h3><p>Hands-on vehicles, aircraft and detailed scale builds. A future range we're exploring.</p><span class="category-status">// RANGE IN RESEARCH</span></article>
+<article class="category-card"><div class="category-icon" aria-hidden="true">🔬</div><h3>Science & Discovery</h3><p>Experiments and interactive builds that turn curiosity into discovery. Ideas in research.</p><span class="category-status">// RANGE IN RESEARCH</span></article></div><p style="margin-top:30px"><a class="btn" href="/projects/">Browse the project workbench →</a></p></section>
   <section class="wrap section-pad" id="projects">
     <div class="section-intro">
       <span class="eyebrow">// coming soon</span>
@@ -439,7 +447,7 @@
     <div class="wrap">
       <p class="signup-kicker">// JOIN THE BUILD CREW</p>
       <h2>Be first to build_</h2>
-      <p>Get launch updates, behind-the-scenes builds and first access to our DIY electronics kits.</p>
+      <p>Get launch updates, behind-the-scenes builds and news about our upcoming hands-on project kits.</p>
       <div class="signup-form"><div class="ml-embedded" data-form="SNDM4W"></div></div>
       <p class="signup-note">Launch updates only. Unsubscribe anytime. Read our <a href="/privacy-policy/">Privacy Policy</a>.</p>
     </div>
@@ -450,7 +458,7 @@
       <span class="eyebrow">// made for curious minds</span>
       <h2>Small builds. Big ideas.</h2>
       <p>We believe some of the best memories start with a box of bits, a curious question and someone to build alongside.</p>
-      <p>My Little Project is a dad-founded UK DIY electronics project brand, creating fun, approachable builds that make learning feel like play.</p><p><a href="/about/">Read our story →</a></p>
+      <p>My Little Project is a dad-founded UK hands-on project brand, developing approachable builds in electronics, robotics and beyond that make learning feel like play.</p><p><a href="/about/">Read our story →</a></p>
     </div>
   </section>
 </main>
