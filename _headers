@@ -1,0 +1,9 @@
+# Security headers for static Cloudflare Pages responses
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000
+
+# A Content-Security-Policy will be added after testing the MailerLite embed.
