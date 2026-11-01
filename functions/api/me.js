@@ -16,7 +16,7 @@ async function verifyClerkToken(token,env,request){
  const parts=token.split(".");
  if(parts.length!==3||token.length>12000)throw Error("invalid_token");
  const header=decodeJSON(parts[0]),claims=decodeJSON(parts[1]);
- if(header.alg!=="RS256"||header.typ!=="JWT"||typeof header.kid!=="string")throw Error("invalid_header");
+ if(header.alg!=="RS256"||(header.typ!==undefined&&header.typ!=="JWT")||typeof header.kid!=="string")throw Error("invalid_header");
  const allowed=env.CLERK_ALLOWED_ORIGINS.split(",").map(s=>s.trim()).filter(Boolean);
  if(!allowed.length||allowed.some(s=>{try{return new URL(s).origin!==s;}catch{return true;}}))throw Error("invalid_origins");
  const origin=request.headers.get("Origin");
@@ -27,7 +27,7 @@ async function verifyClerkToken(token,env,request){
  if(claims.iss!==issuer.origin||typeof claims.sub!=="string"||!claims.sub.startsWith("user_")||
     typeof claims.sid!=="string"||!claims.sid.startsWith("sess_")||
     !Number.isInteger(claims.exp)||claims.exp<=now||
-    !Number.isInteger(claims.nbf)||claims.nbf>now+30||
+    (claims.nbf!==undefined&&(!Number.isInteger(claims.nbf)||claims.nbf>now+30))||
     !Number.isInteger(claims.iat)||claims.iat>now+30)throw Error("invalid_claims");
  const response=await fetch(jwksUrl.toString(),{headers:{Accept:"application/json"}});
  if(!response.ok)throw Error("jwks_unavailable");
@@ -49,6 +49,8 @@ export async function onRequestGet({request,env}){
   return json({authenticated:true,userId:claims.sub,customerDataConnected:false});
  }catch(e){
   if(e.message==="jwks_unavailable")return json({error:"authentication_temporarily_unavailable"},503);
-  return json({authenticated:false,error:"invalid_session"},401);
+  // Development-only diagnostic categories; never return tokens, claims, or key material.
+  const categories={invalid_origin:"origin_not_allowed",invalid_origins:"origin_configuration_invalid",invalid_auth_config:"issuer_configuration_invalid",invalid_claims:"token_claims_rejected",invalid_header:"token_header_rejected",unknown_signing_key:"signing_key_not_found",invalid_signature:"signature_rejected"};
+  return json({authenticated:false,error:"invalid_session",reason:categories[e.message]||"token_verification_failed"},401);
  }
 }
