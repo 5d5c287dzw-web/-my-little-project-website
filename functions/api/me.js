@@ -8,7 +8,7 @@ function decodeBase64Url(s) {
  return Uint8Array.from(binary,c=>c.charCodeAt(0));
 }
 function decodeJSON(s){return JSON.parse(new TextDecoder().decode(decodeBase64Url(s)));}
-async function verifyClerkToken(token,env,request){
+export async function verifyClerkToken(token,env,request){
  if(!env.CLERK_ISSUER||!env.CLERK_JWKS_URL||!env.CLERK_ALLOWED_ORIGINS)throw Error("auth_not_configured");
  const issuer=new URL(env.CLERK_ISSUER);
  const jwksUrl=new URL(env.CLERK_JWKS_URL);
