@@ -37,7 +37,7 @@ window.addEventListener('load',async()=>{
   }
   const projects=Array.isArray(data.projects)?data.projects:[];
   if(!projects.length){status.innerHTML='No demo projects added yet. <a href="/workshop/">Add the Little RC Buggy from My Workshop →</a>';return}
-  const known={'LP-031':{title:'Little RC Buggy',total:5,url:'/workshop/'},'LP-001':{title:'Little Flight Radar',total:5,url:null}};
+  const known={'LP-031':{title:'Little RC Buggy',total:5,url:'/workshop/projects/lp-031/'},'LP-001':{title:'Little Flight Radar',total:5,url:null}};
   target.innerHTML=projects.map(p=>{
    const item=known[p.projectId]||{title:'Demo project',total:5,url:null};
    const count=Array.isArray(p.completedSteps)?new Set(p.completedSteps.filter(n=>Number.isInteger(n)&&n>=0&&n<item.total)).size:0;
