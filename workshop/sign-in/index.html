@@ -18,7 +18,7 @@ window.addEventListener('load', async () => {
      const response=await fetch('/api/me',{method:'GET',headers:{Authorization:'Bearer '+token,Accept:'application/json'},cache:'no-store'});
      const data=await response.json();
      if(response.ok&&data.authenticated===true){result.textContent='Verified by Cloudflare API. Your Clerk session is valid. Customer records are not connected yet.';}
-     else{result.textContent='API verification returned HTTP '+response.status+' ('+String(data.error||'unknown_error')+').';}
+     else{result.textContent='API verification returned HTTP '+response.status+' ('+String(data.error||'unknown_error')+(data.reason?' — '+String(data.reason):'')+').';}
     }catch(e){result.textContent='Session test failed. Check that Clerk and Cloudflare Preview settings match.';console.error('Session test failed',e);}
     finally{testButton.disabled=false;testButton.textContent='Test secure session →';}
    });
