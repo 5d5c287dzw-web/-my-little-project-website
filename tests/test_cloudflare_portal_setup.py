@@ -1,6 +1,7 @@
 import importlib.util
 import io
 import copy
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -70,6 +71,18 @@ class FakeCloudflare:
 
 
 class CloudflareSetupTests(unittest.TestCase):
+    def test_discovers_only_the_account_with_the_expected_pages_source(self):
+        accounts = {"success": True, "result": [{"id": "a" * 32}, {"id": "b" * 32}],
+                    "result_info": {"total_count": 2}}
+        def source_for_account(client):
+            result = project()
+            if client.path.endswith("b" * 32):
+                result["source"]["config"]["repo_name"] = "another-site"
+            return result
+        with patch.object(setup, "urlopen", return_value=io.BytesIO(json.dumps(accounts).encode())), \
+             patch.object(setup.Cloudflare, "project", source_for_account):
+            self.assertEqual(setup.discover_account_id("test-token"), "a" * 32)
+
     def test_refuses_unexpected_production_database_or_source(self):
         databases = [{"name": "other-production", "uuid": "other-id"}]
         with self.assertRaisesRegex(setup.SetupError, "unexpected database"):

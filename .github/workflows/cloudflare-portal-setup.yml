@@ -1,6 +1,11 @@
 name: Configure My Little Project portal
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cloudflare-portal-setup.yml
+      - scripts/cloudflare_portal_setup.py
   workflow_dispatch:
     inputs:
       mode:
@@ -10,9 +15,9 @@ on:
         default: inspect
         required: true
       account_id:
-        description: Cloudflare account ID (32 hexadecimal characters)
+        description: Optional Cloudflare account ID; auto-discovers the site when omitted
         type: string
-        required: true
+        required: false
       clerk_publishable_key:
         description: Optional production Clerk pk_live_ key (public value)
         type: string
@@ -40,5 +45,5 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
           CLERK_PUBLISHABLE_KEY: ${{ inputs.clerk_publishable_key }}
           CLERK_ISSUER: ${{ inputs.clerk_issuer }}
-          SETUP_MODE: ${{ inputs.mode }}
+          SETUP_MODE: ${{ github.event_name == 'push' && 'inspect' || inputs.mode }}
         run: python3 scripts/cloudflare_portal_setup.py --mode "$SETUP_MODE"
