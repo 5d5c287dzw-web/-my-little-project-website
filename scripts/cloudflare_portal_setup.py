@@ -31,6 +31,36 @@ class SetupError(Exception):
     pass
 
 
+def discover_account_id(token: str):
+    """Find the one Cloudflare account serving this exact repository-backed site."""
+    if not token:
+        raise SetupError("CLOUDFLARE_API_TOKEN GitHub Actions secret is missing")
+    request = Request(BASE + "/accounts?per_page=50", headers={
+        "Authorization": "Bearer " + token, "Accept": "application/json",
+    })
+    try:
+        with urlopen(request, timeout=30) as response:
+            data = json.load(response)
+    except (HTTPError, URLError, TimeoutError, ValueError):
+        raise SetupError("Could not discover the Cloudflare account; enter account_id in a manual inspect run") from None
+    if not data.get("success") or (data.get("result_info") or {}).get("total_count", 0) > 50:
+        raise SetupError("Could not uniquely discover the account; enter account_id in a manual inspect run")
+    matches = []
+    for account in data.get("result") or []:
+        account_id = account.get("id", "")
+        if not re.fullmatch(r"[a-fA-F0-9]{32}", account_id):
+            continue
+        try:
+            candidate = Cloudflare(token, account_id).project()
+            validate_project(candidate)
+            matches.append(account_id)
+        except SetupError:
+            continue
+    if len(matches) != 1:
+        raise SetupError("Could not uniquely match the Pages project; enter account_id in a manual inspect run")
+    return matches[0]
+
+
 class Cloudflare:
     def __init__(self, token: str, account_id: str):
         if not token:
@@ -229,8 +259,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("inspect", "apply"), required=True)
     args = parser.parse_args()
-    client = Cloudflare(os.environ.get("CLOUDFLARE_API_TOKEN", ""),
-                        os.environ.get("CLOUDFLARE_ACCOUNT_ID", ""))
+    token = os.environ.get("CLOUDFLARE_API_TOKEN", "")
+    account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+    if not account_id:
+        account_id = discover_account_id(token)
+        print("Matched the Cloudflare account to the expected GitHub-backed Pages project.")
+    client = Cloudflare(token, account_id)
     variables = clerk_variables(os.environ.get("CLERK_PUBLISHABLE_KEY", ""),
                                 os.environ.get("CLERK_ISSUER", ""))
     project = client.project()
