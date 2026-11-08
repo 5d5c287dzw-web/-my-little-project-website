@@ -15,4 +15,6 @@ The `feature/my-workshop-phase-1-20261101` branch still contains an unfinished c
 
 `/admin/` and `/studio/` are now implemented as role-gated development workspaces. Their APIs use Cloudflare D1 and verified Clerk sessions. The public shop still works if those services are not configured; the private routes fail closed. See `docs/portal-rollout.md` for the separate production setup and `database/003_portal_workspace.sql` migration.
 
+The manual GitHub Actions workflow `Configure My Little Project portal` can inspect and configure the Production D1 binding with a scoped Cloudflare API token stored as a repository secret. It does not grant admin access or enable checkout.
+
 Run the focused security and data-flow checks with `node --test tests/portal.test.mjs` (Node 24 or newer).
