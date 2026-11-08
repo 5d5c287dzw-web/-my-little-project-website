@@ -1,478 +1,70 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-GB">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fafbf7">
-  <meta name="description" content="Discover upcoming hands-on DIY electronics and robotics kits for curious families. Build, learn and create with My Little Project.">
-  <title>My Little Project | DIY Electronics &amp; Robotics Kits UK</title>
-  <style>
-    :root {
-      --ink: #152b3b;
-      --paper: #fafbf7;
-      --blue: #48c6f1;
-      --lime: #c9f46a;
-      --yellow: #ffe27c;
-      --line: #d9e3e2;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      font-family: "Courier New", Courier, monospace;
-      background-color: var(--paper);
-      background-image:
-        linear-gradient(#dfe9e944 1px, transparent 1px),
-        linear-gradient(90deg, #dfe9e944 1px, transparent 1px);
-      background-size: 26px 26px;
-      line-height: 1.6;
-    }
-    a { color: inherit; }
-    .wrap { max-width: 1120px; margin: auto; padding: 0 24px; }
-    .topbar {
-      border-bottom: 2px solid var(--ink);
-      background: #fafbf7ef;
-    }
-    .nav {
-      min-height: 88px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-      padding-top: 14px;
-      padding-bottom: 14px;
-    }
-    .logo {
-      font-size: clamp(18px, 3vw, 25px);
-      font-weight: 900;
-      text-decoration: none;
-      letter-spacing: -1.5px;
-    }
-    .logo span { color: #0798c7; }
-    .links { display: flex; gap: 20px; flex-wrap: wrap; }
-    .links a {
-      font-size: 12px;
-      font-weight: bold;
-      text-decoration: none;
-    }
-    .btn {
-      display: inline-block;
-      border: 2px solid var(--ink);
-      background: var(--lime);
-      box-shadow: 5px 5px 0 var(--ink);
-      padding: 13px 18px;
-      font: bold 13px "Courier New", monospace;
-      text-decoration: none;
-      transition: transform .15s, box-shadow .15s;
-      cursor: pointer;
-    }
-    .btn:hover {
-      transform: translate(3px, 3px);
-      box-shadow: 2px 2px 0 var(--ink);
-    }
-    .btn.yellow { background: var(--yellow); }
-    .eyebrow {
-      display: inline-block;
-      font-size: 12px;
-      font-weight: bold;
-      background: var(--yellow);
-      padding: 5px 10px;
-      border: 1px solid var(--ink);
-      transform: rotate(-2deg);
-    }
-    .hero {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 45px;
-      align-items: center;
-      padding-top: 90px;
-      padding-bottom: 90px;
-    }
-    h1, h2, h3 { line-height: 1.15; letter-spacing: -1.5px; }
-    h1 { font-size: clamp(46px, 7vw, 82px); margin: 22px 0; }
-    h2 { font-size: clamp(30px, 5vw, 44px); }
-    .highlight {
-      background: linear-gradient(transparent 58%, var(--lime) 58%);
-    }
-    .hero p { font-size: 16px; max-width: 480px; }
-    .hero-visual {
-      position: relative;
-      min-height: 370px;
-      border: 3px solid var(--ink);
-      background: #dff5f7;
-      box-shadow: 12px 12px 0 var(--blue);
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-    }
-    .hero-visual svg { width: 90%; max-width: 440px; }
-    .sticker {
-      position: absolute;
-      top: 18px;
-      right: -14px;
-      background: var(--yellow);
-      border: 2px solid var(--ink);
-      padding: 9px 16px;
-      font-size: 12px;
-      font-weight: bold;
-      transform: rotate(8deg);
-    }
-    .mini-label {
-      position: absolute;
-      bottom: 14px;
-      left: 16px;
-      font-size: 11px;
-      background: white;
-      padding: 6px 9px;
-      border: 1px dashed var(--ink);
-    }
-    .benefits {
-      background: white;
-      border-top: 2px solid var(--ink);
-      border-bottom: 2px solid var(--ink);
-    }
-    .benefit-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 22px;
-      padding-top: 28px;
-      padding-bottom: 28px;
-    }
-    .benefit { font-weight: bold; font-size: 13px; }
-    .benefit b { font-size: 24px; display: block; }
-    section { scroll-margin-top: 30px; }
-    .section-pad { padding-top: 85px; padding-bottom: 85px; }
-    .section-intro { max-width: 650px; margin-bottom: 35px; }
-    .section-intro p { color: #4c606a; }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
-    }
-    .card {
-      border: 2px solid var(--ink);
-      background: white;
-      box-shadow: 7px 7px 0 var(--ink);
-      overflow: hidden;
-    }
-    .card-art {
-      height: 240px;
-      display: grid;
-      place-items: center;
-      position: relative;
-    }
-    .card-art.blue { background: #d9f4fc; }
-    .card-art.green { background: #e9f7d6; }
-    .card-art svg { width: 78%; max-height: 200px; }
-    .tag {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: var(--yellow);
-      border: 1px solid var(--ink);
-      padding: 5px 9px;
-      font-size: 11px;
-      font-weight: bold;
-      transform: rotate(4deg);
-    }
-    .card-body { padding: 25px; }
-    .code { font-size: 11px; color: #0789af; font-weight: bold; }
-    .card h3 { font-size: 25px; margin: 10px 0; }
-    .card p { font-size: 13px; }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-    }
-    .step {
-      border: 2px solid var(--ink);
-      padding: 24px 18px;
-      background: white;
-    }
-    .step:nth-child(2) { background: #e6f7ff; }
-    .step:nth-child(3) { background: #f1fbdc; }
-    .step:nth-child(4) { background: #fff6d5; }
-    .number { font-size: 32px; font-weight: bold; }
-    .step h3 { font-size: 17px; }
-    .step p { font-size: 12px; }
-    .signup {
-      background: var(--ink);
-      color: white;
-      padding: 70px 24px;
-      text-align: center;
-    }
-    .signup h2 { margin-top: 0; }
-    .signup p { max-width: 580px; margin: 0 auto 25px; }
-    .about { max-width: 750px; margin: auto; text-align: center; }
-    footer {
-      border-top: 2px solid var(--ink);
-      background: white;
-      padding: 35px 0;
-      font-size: 12px;
-    }
-    .footer-inner {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    @media (max-width: 760px) {
-      .hero { grid-template-columns: 1fr; padding-top: 55px; gap: 35px; }
-      .hero-visual { min-height: 280px; }
-      .benefit-grid, .steps { grid-template-columns: repeat(2, 1fr); }
-      .cards { grid-template-columns: 1fr; }
-      .links { gap: 12px; }
-      .section-pad { padding-top: 60px; padding-bottom: 60px; }
-    }
-    @media (max-width: 390px) {
-      .benefit-grid, .steps { grid-template-columns: 1fr; }
-      .wrap { padding-left: 18px; padding-right: 18px; }
-    }
-  
-/* Mobile header and hero refinements */
-.nav { min-height:72px; padding-top:10px; padding-bottom:10px; }
-.logo { font-size:clamp(20px,2.3vw,27px); white-space:nowrap; }
-.links { align-items:center; gap:24px; }
-.links a:hover,.links a:focus-visible { color:#078eb9; }
-.hero { padding-top:65px; padding-bottom:75px; }
-.hero h1 { line-height:1.08; margin:20px 0 24px; }
-.hero p { line-height:1.7; }
-.hero-visual { min-height:350px; }
-@media (max-width:760px) {
- .nav { display:grid; grid-template-columns:1fr auto; gap:12px; padding-top:14px; padding-bottom:14px; }
- .logo { font-size:clamp(19px,5vw,25px); grid-column:1; grid-row:1; }
- .links { grid-column:1/-1; grid-row:2; display:flex; gap:18px; overflow-x:auto; white-space:nowrap; padding:4px 0; scrollbar-width:none; }
- .links::-webkit-scrollbar { display:none; }
- .nav > .btn { grid-column:2; grid-row:1; padding:9px 10px; font-size:10px; box-shadow:3px 3px 0 var(--ink); white-space:nowrap; }
- .hero { grid-template-columns:1fr; gap:28px; padding-top:42px; padding-bottom:55px; }
- .hero h1 { font-size:clamp(44px,11vw,65px); line-height:1.06; margin:18px 0; }
- .hero p { font-size:14px; line-height:1.6; }
- .hero-visual { min-height:245px; box-shadow:7px 7px 0 var(--blue); }
- .sticker { font-size:10px; right:-6px; padding:6px 9px; }
-}
-@media (max-width:390px) {
- .nav { grid-template-columns:1fr; }
- .logo { grid-column:1; grid-row:1; }
- .nav > .btn { grid-column:1; grid-row:3; justify-self:start; }
- .links { grid-column:1; grid-row:2; gap:14px; }
- .hero h1 { font-size:clamp(42px,11vw,54px); }
-}
-
-    .signup-kicker { color:var(--lime); font-size:12px; font-weight:bold; letter-spacing:1px; margin-bottom:12px!important; }
-    .signup-form { max-width:560px; margin:28px auto 0; text-align:left; }
-    .signup-note { font-size:11px; margin-top:22px!important; opacity:.85; }
-  
-    /* Make clickable elements visually obvious on hover and keyboard focus */
-    a, button { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
-    .btn:hover, .btn:focus-visible, .btn.yellow:hover, .btn.yellow:focus-visible { background: var(--blue); color: var(--ink); }
-    .card-body a:hover, .card-body a:focus-visible, .links a:hover, .links a:focus-visible, footer a:hover, footer a:focus-visible, .signup a:hover, .signup a:focus-visible, #projects a:not(.btn):hover, #projects a:not(.btn):focus-visible { background: var(--lime); color: var(--ink); text-decoration-thickness: 2px; }
-    a:focus-visible, button:focus-visible { outline: 3px solid #0798c7; outline-offset: 3px; }
-    @media (prefers-reduced-motion: reduce) { a, button { transition: none; } }
-
-.category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.category-card{background:#fff;border:2px solid var(--ink);padding:23px;box-shadow:5px 5px 0 var(--ink)}.category-icon{font-size:30px}.category-card h3{font-size:20px;margin:10px 0}.category-card p{font-size:13px}.category-card a{font-size:12px;font-weight:bold}.category-card a:hover,.category-card a:focus-visible{background:var(--lime)}.category-status{font-size:11px;color:#52646b;font-weight:bold}@media(max-width:800px){.category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:540px){.category-grid{grid-template-columns:1fr}}
-</style>
-  <!-- MailerLite Universal: launch signup -->
-  <script>
-    (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
-    ml('account','2743003');
-  </script>
-
-<link rel="canonical" href="https://mylittleproject.co.uk/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="My Little Project">
-<meta property="og:locale" content="en_GB">
-<meta property="og:title" content="My Little Project | DIY Electronics &amp; Robotics Kits UK">
-<meta property="og:description" content="Discover upcoming hands-on DIY electronics and robotics kits for curious families. Build, learn and create with My Little Project.">
-<meta property="og:url" content="https://mylittleproject.co.uk/">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="My Little Project | DIY Electronics &amp; Robotics Kits UK">
-<meta name="twitter:description" content="Discover upcoming hands-on DIY electronics and robotics kits for curious families. Build, learn and create with My Little Project.">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://mylittleproject.co.uk/#organization","name":"My Little Project","url":"https://mylittleproject.co.uk/","email":"hello@mylittleproject.co.uk","description":"UK-based upcoming DIY electronics and robotics projects for curious families."},{"@type":"WebSite","@id":"https://mylittleproject.co.uk/#website","url":"https://mylittleproject.co.uk/","name":"My Little Project","publisher":{"@id":"https://mylittleproject.co.uk/#organization"}},{"@type":"WebPage","@id":"https://mylittleproject.co.uk/#webpage","url":"https://mylittleproject.co.uk/","name":"My Little Project | DIY Electronics & Robotics Kits UK","description":"Discover upcoming hands-on DIY electronics and robotics kits for curious families. Build, learn and create with My Little Project.","isPartOf":{"@id":"https://mylittleproject.co.uk/#website"},"inLanguage":"en-GB"}]}</script>
-</head>
-<body>
-
-<header class="topbar">
-  <div class="wrap nav">
-    <a class="logo" href="#home">my little project<span>_</span></a>
-    <nav class="links" aria-label="Main navigation">
-      <a href="#home">[home]</a>
-      <a href="#projects">[projects]</a>
-      <a href="/about/">[about]</a>
-      <a href="#contact">[contact]</a>
+  <meta name="theme-color" content="#194e43">
+  <meta name="description" content="Solder-free DIY electronics and STEM projects in development for curious families. Discover Little Flight Radar, Little RC Buggy and more.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="My Little Project">
+  <meta property="og:title" content="My Little Project | Build-together electronics &amp; STEM kits">
+  <meta property="og:description" content="Solder-free DIY electronics and STEM projects in development for curious families. Discover Little Flight Radar, Little RC Buggy and more.">
+  <meta property="og:url" content="https://mylittleproject.co.uk/">
+  <link rel="canonical" href="https://mylittleproject.co.uk/">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+  <title>My Little Project | Build-together electronics &amp; STEM kits</title>
+</head><body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="announcement"><span class="sparkle">✳</span> A small shop for big discoveries <span class="announcement-divider">·</span> New kits are in development <span class="sparkle">✳</span></div>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label="My Little Project home"><span class="brand-mark" aria-hidden="true"><span class="mark-stem">m</span><span class="mark-star">✦</span></span><span class="brand-type">my little<br><strong>project</strong><span class="brand-period">.</span></span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+      <a class="" href="/projects/">Explore projects</a>
+      <a href="/#how-it-works">How it works</a>
+      <a class="" href="/about/">Our story</a>
+      <a class="nav-cta" href="/#updates">Get launch updates <span aria-hidden="true">→</span></a>
     </nav>
-    <a class="btn yellow" href="#updates">Get launch updates →</a>
   </div>
-</header>
-
-<main>
-  <section class="wrap hero" id="home">
-    <div>
-      <span class="eyebrow">// hello, curious human!</span>
-      <h1>Build.<br>Learn.<br><span class="highlight">Create.</span></h1>
-      <p><strong>Little projects. Big memories.</strong></p>
-      <p>Hands-on projects in electronics, robotics, miniature engineering and more. For curious kids, grown-ups and everyone in between. Make something brilliant, together.</p>
-      <a class="btn" href="#projects">Explore our projects →</a>
-    </div>
-
-    <div class="hero-visual">
-      <span class="sticker">MADE TO BUILD!</span>
-      <svg viewBox="0 0 440 320" role="img" aria-label="Illustration of a DIY remote-controlled buggy">
-        <g stroke="#183246" stroke-width="5" stroke-linejoin="round">
-          <path d="M105 145 L166 105 L280 105 L338 155 L320 222 L115 222 Z" fill="#b7eb50"/>
-          <path d="M163 108 L183 69 L267 69 L283 108" fill="#4dc7ee"/>
-          <rect x="154" y="126" width="136" height="65" rx="9" fill="#183246"/>
-          <rect x="170" y="137" width="105" height="44" rx="4" fill="#47d0e8" stroke-width="2"/>
-          <path d="M184 159 L206 159 L216 146 L236 174 L250 159 L266 159" stroke="#183246" fill="none" stroke-width="3"/>
-          <circle cx="125" cy="224" r="49" fill="#1b2b3b"/>
-          <circle cx="125" cy="224" r="23" fill="#dce8e8"/>
-          <circle cx="318" cy="224" r="49" fill="#1b2b3b"/>
-          <circle cx="318" cy="224" r="23" fill="#dce8e8"/>
-          <path d="M291 106 L325 86 L350 100" fill="none"/>
-          <circle cx="354" cy="97" r="7" fill="#ffe27c"/>
-          <path d="M85 162 L63 162 M82 185 L48 185 M359 165 L386 165" stroke="#0798c7"/>
-        </g>
-        <g fill="#0798c7" font-family="monospace" font-size="12">
-          <text x="40" y="85">ESP32 →</text>
-          <text x="285" y="45">↘ antenna</text>
-          <text x="180" y="305">LP-031 // RC BUGGY</text>
-        </g>
-      </svg>
-      <span class="mini-label">[ prototype mode: ON ]</span>
-    </div>
-  </section>
-
-  <div class="benefits">
-    <div class="wrap benefit-grid">
-      <div class="benefit"><b>⚡</b>Hands-on fun</div>
-      <div class="benefit"><b>✦</b>Learn real skills</div>
-      <div class="benefit"><b>♡</b>Quality time together</div>
-      <div class="benefit"><b>✓</b>Beginner friendly</div>
-    </div>
-  </div>
-
-
-  <section class="wrap section-pad" id="categories"><div class="section-intro"><span class="eyebrow">// EXPLORE WHAT'S POSSIBLE</span><h2>More ways to make_</h2><p>We're growing beyond electronics into hands-on projects for curious minds of all ages. Some ranges are still being researched — our first prototypes are shown below.</p></div><div class="category-grid"><article class="category-card"><div class="category-icon" aria-hidden="true">⚡</div><h3>Electronics & Coding</h3><p>Circuits, clever displays and coding projects — including our Little Flight Radar.</p><a href="/projects/little-flight-radar/">Explore Flight Radar →</a></article>
-<article class="category-card"><div class="category-icon" aria-hidden="true">🤖</div><h3>Robotics & RC</h3><p>Build moving machines, controllers and race-ready projects.</p><a href="/projects/little-rc-buggy/">Explore RC Buggy →</a></article>
-<article class="category-card"><div class="category-icon" aria-hidden="true">⚙</div><h3>Miniature Engineering</h3><p>Discover working mechanisms, gears and miniature engines. We're researching future kits.</p><span class="category-status">// RANGE IN RESEARCH</span></article>
-<article class="category-card"><div class="category-icon" aria-hidden="true">✈</div><h3>Model Building</h3><p>Hands-on vehicles, aircraft and detailed scale builds. A future range we're exploring.</p><span class="category-status">// RANGE IN RESEARCH</span></article>
-<article class="category-card"><div class="category-icon" aria-hidden="true">🔬</div><h3>Science & Discovery</h3><p>Experiments and interactive builds that turn curiosity into discovery. Ideas in research.</p><span class="category-status">// RANGE IN RESEARCH</span></article></div><p style="margin-top:30px"><a class="btn" href="/projects/">Browse the project workbench →</a></p></section>
-  <section class="wrap section-pad" id="projects">
-    <div class="section-intro">
-      <span class="eyebrow">// coming soon</span>
-      <h2>Our first projects_</h2>
-      <p>We're busy prototyping, testing and making sure every kit is as fun to build as it is to use. Here's what's on the workbench.</p>
-    </div>
-
-    <div class="cards">
-      <article class="card">
-        <div class="card-art blue">
-          <span class="tag">COMING SOON</span>
-          <svg viewBox="0 0 300 210" role="img" aria-label="Round flight radar display">
-            <circle cx="150" cy="105" r="88" fill="#173044" stroke="#111d28" stroke-width="10"/>
-            <circle cx="150" cy="105" r="72" fill="#082c30" stroke="#b7ef65" stroke-width="2"/>
-            <circle cx="150" cy="105" r="47" fill="none" stroke="#57ca7a" opacity=".6"/>
-            <circle cx="150" cy="105" r="24" fill="none" stroke="#57ca7a" opacity=".6"/>
-            <path d="M78 105H222 M150 33V177 M150 105L204 58" stroke="#57ca7a" opacity=".7"/>
-            <g fill="#c8f26a" font-family="monospace" font-size="13">
-              <text x="170" y="72">✈</text>
-              <text x="104" y="123">✈</text>
-              <text x="169" y="151">✈</text>
-            </g>
-            <circle cx="150" cy="105" r="5" fill="#ffe27c"/>
-            <rect x="125" y="190" width="50" height="13" rx="4" fill="#173044"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="code">LP-001 // ELECTRONICS</div>
-          <h3>Little Flight Radar</h3>
-          <p>Build your own round-screen aircraft tracker and discover the planes flying above you.</p>
-          <p><strong>Status:</strong> Prototype in development</p>
-          <a href="/projects/little-flight-radar/">Explore Little Flight Radar →</a>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="card-art green">
-          <span class="tag">COMING SOON</span>
-          <svg viewBox="0 0 300 210" role="img" aria-label="DIY remote-controlled buggy">
-            <g stroke="#173044" stroke-width="4" stroke-linejoin="round">
-              <path d="M45 90 L105 57 L211 57 L261 98 L241 156 L61 156 Z" fill="#b7eb50"/>
-              <rect x="104" y="76" width="104" height="55" rx="6" fill="#173044"/>
-              <rect x="115" y="86" width="82" height="35" fill="#4ac8ec"/>
-              <circle cx="83" cy="158" r="35" fill="#173044"/>
-              <circle cx="83" cy="158" r="16" fill="#e6f1f0"/>
-              <circle cx="225" cy="158" r="35" fill="#173044"/>
-              <circle cx="225" cy="158" r="16" fill="#e6f1f0"/>
-              <path d="M213 58 L237 34 L259 42" fill="none"/>
-            </g>
-            <text x="110" y="202" font-family="monospace" font-size="11" fill="#173044">BUILD → DRIVE → REPEAT</text>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="code">LP-031 // ROBOTICS</div>
-          <h3>Little RC Buggy</h3>
-          <p>Put together your own little robot car, then take control and race it around.</p>
-          <p><strong>Status:</strong> Prototype in development</p>
-          <a href="/projects/little-rc-buggy/">Explore Little RC Buggy →</a>
-        </div>
-      </article>
-    </div>
-    <div style="margin-top:32px;border:2px solid var(--ink);background:#fff7d3;padding:22px 25px;box-shadow:5px 5px 0 var(--ink)">
-      <span class="eyebrow">// LP-036 · COMING SOON</span>
-      <h3>Build &amp; Race Twin Pack_</h3>
-      <p>Two Little RC Buggy builds, two controllers and a whole lot of friendly competition.</p>
-      <a href="/projects/build-and-race-twin-pack/">Explore the Twin Pack →</a>
-    </div>
-    <p style="margin-top:26px"><a class="btn" href="/projects/">Explore all projects →</a></p>
-  </section>
-
-  <section class="wrap section-pad" id="how">
-    <div class="section-intro">
-      <span class="eyebrow">// how it works</span>
-      <h2>From kit to awesome_</h2>
-      <p>Simple steps. Big discoveries.</p>
-    </div>
-    <div class="steps">
-      <div class="step"><div class="number">01</div><h3>Get your kit</h3><p>Everything you need, thoughtfully packed together.</p></div>
-      <div class="step"><div class="number">02</div><h3>Build it</h3><p>Follow clear instructions and bring your project to life.</p></div>
-      <div class="step"><div class="number">03</div><h3>Learn new skills</h3><p>Discover the clever technology behind what you've made.</p></div>
-      <div class="step"><div class="number">04</div><h3>Enjoy and explore</h3><p>Play, experiment, improve and make it your own.</p></div>
-    </div>
-  </section>
-
-  <section class="signup" id="updates">
-    <div class="wrap">
-      <p class="signup-kicker">// JOIN THE BUILD CREW</p>
-      <h2>Be first to build_</h2>
-      <p>Get launch updates, behind-the-scenes builds and news about our upcoming hands-on project kits.</p>
-      <div class="signup-form"><div class="ml-embedded" data-form="SNDM4W"></div></div>
-      <p class="signup-note">Launch updates only. Unsubscribe anytime. Read our <a href="/privacy-policy/">Privacy Policy</a>.</p>
-    </div>
-  </section>
-
-  <section class="wrap section-pad" id="about">
-    <div class="about">
-      <span class="eyebrow">// made for curious minds</span>
-      <h2>Small builds. Big ideas.</h2>
-      <p>We believe some of the best memories start with a box of bits, a curious question and someone to build alongside.</p>
-      <p>My Little Project is a dad-founded UK hands-on project brand, developing approachable builds in electronics, robotics and beyond that make learning feel like play.</p><p><a href="/about/">Read our story →</a></p>
-    </div>
-  </section>
-</main>
-
-<footer id="contact">
-  <div class="wrap footer-inner">
-    <div><strong>my little project_</strong><div>Little projects. Big memories.</div></div>
-    <div><a href="mailto:hello@mylittleproject.co.uk">hello@mylittleproject.co.uk</a></div>
-    <div><a href="/privacy-policy/">Privacy Policy</a> · © <span id="year">2026</span> My Little Project</div>
-  </div>
-</footer>
-<script>
-  document.getElementById("year").textContent = new Date().getFullYear();
-</script>
-</body>
-</html>
-
+</header><main id="main">
+<section class="hero"><div class="container hero-layout"><div class="hero-copy"><span class="eyebrow hero-eyebrow"><span class="eyebrow-line"></span> FOR THE CURIOUS & THE HANDS-ON</span><h1>Little projects.<br><em>Big memories.</em></h1><p>Thoughtful, build-together electronics and STEM kits for the curious kid in all of us. Get stuck in, figure it out and make something you're proud to say you built.</p><div class="hero-actions"><a class="button button-yellow" href="/projects/">Explore our projects <span aria-hidden="true">→</span></a><a class="button button-ghost" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a></div><div class="hero-note"><span>✳</span> Solder-free first <i></i> Core kits planned under £40</div></div>
+<div class="hero-visual" aria-label="Illustrations of the Little RC Buggy and Flight Radar projects" role="img"><div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div><span class="hero-scribble">make<br>something<br><em>amazing!</em></span><div class="hero-radar"><img src="/assets/radar.svg" alt=""></div><div class="hero-buggy"><img src="/assets/buggy.svg" alt=""></div><div class="hero-ticket">01 / LET'S MAKE IT <span>✦</span></div><div class="hero-caption">IDEA → BUILD → WOW</div></div></div><div class="hero-scroll container"><span>SCROLL TO EXPLORE</span><span>↓</span></div></section>
+<section class="values-strip"><div class="container values-grid"><div><span class="value-icon">✳</span><span><strong>Solder-free first</strong><small>Designed for first-time makers</small></span></div><div><span class="value-icon">→</span><span><strong>Make it together</strong><small>Quality time with a purpose</small></span></div><div><span class="value-icon">◎</span><span><strong>Learn by doing</strong><small>Real skills, real discoveries</small></span></div><div><span class="value-icon">£</span><span><strong>Within reach</strong><small>Core kits targeted under £40</small></span></div></div></section>
+<section class="section projects-section" id="projects"><div class="container"><div class="section-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> THE WORKBENCH</span><h2>Good things are<br><em>in the making.</em></h2></div><div class="heading-aside"><p>Our first ideas are becoming real projects. We're testing the parts, the instructions and the fun before anything goes on sale.</p><a class="text-link" href="/projects/">See all projects <span aria-hidden="true">→</span></a></div></div><div class="card-grid"><article class="project-card ">
+      <a class="card-art-link" href="/projects/little-flight-radar/" aria-label="Explore Little Flight Radar"><div class="project-art art-radar "><span class="art-grid" aria-hidden="true"></span><img src="/assets/radar.svg" alt="Concept illustration of a round flight radar display" loading="lazy"><span class="art-corner">MLP / MAKE 01</span></div></a>
+      <div class="card-content"><div class="card-meta"><span>LP-001 / Electronics & discovery</span><span class="status-dot">In development</span></div>
+      <h3><a href="/projects/little-flight-radar/">Little Flight Radar</a></h3><p>Build a round-screen aircraft tracker and discover what's flying above you.</p>
+      <a class="text-link" href="/projects/little-flight-radar/">Explore the project <span aria-hidden="true">→</span></a></div>
+    </article><article class="project-card ">
+      <a class="card-art-link" href="/projects/little-rc-buggy/" aria-label="Explore Little RC Buggy"><div class="project-art art-buggy "><span class="art-grid" aria-hidden="true"></span><img src="/assets/buggy.svg" alt="Concept illustration of a build-your-own RC buggy" loading="lazy"><span class="art-corner">MLP / MAKE 01</span></div></a>
+      <div class="card-content"><div class="card-meta"><span>LP-031 / Robotics & RC</span><span class="status-dot">In development</span></div>
+      <h3><a href="/projects/little-rc-buggy/">Little RC Buggy</a></h3><p>Put together a small robot car, take control, and make it move your way.</p>
+      <a class="text-link" href="/projects/little-rc-buggy/">Explore the project <span aria-hidden="true">→</span></a></div>
+    </article><article class="project-card ">
+      <a class="card-art-link" href="/projects/build-and-race-twin-pack/" aria-label="Explore Build & Race Twin Pack"><div class="project-art art-twin "><span class="art-grid" aria-hidden="true"></span><img src="/assets/twin.svg" alt="Concept illustration of two RC buggies and controllers" loading="lazy"><span class="art-corner">MLP / MAKE 01</span></div></a>
+      <div class="card-content"><div class="card-meta"><span>LP-036 / Build-together bundle</span><span class="status-dot">Concept</span></div>
+      <h3><a href="/projects/build-and-race-twin-pack/">Build & Race Twin Pack</a></h3><p>Two buggy builds, two controllers, and plenty of room for friendly competition.</p>
+      <a class="text-link" href="/projects/build-and-race-twin-pack/">Explore the project <span aria-hidden="true">→</span></a></div>
+    </article></div><p class="section-footnote">Illustrations show project concepts. Final kit contents, pricing and launch dates are being confirmed.</p></div></section>
+<section class="feature-section"><div class="container feature-layout"><div class="feature-visual"><div class="feature-paper"><span>FIELD NOTES / NO. 001</span><div class="paper-radar"><img src="/assets/radar.svg" alt="Concept illustration of the Little Flight Radar"></div><strong>What’s flying<br>overhead?</strong><small>look up / tune in / discover</small></div><div class="feature-label">FROM THE WORKBENCH <span>→</span></div></div><div class="feature-copy"><span class="eyebrow"><span class="eyebrow-line"></span> START WITH A QUESTION</span><h2>What if we<br><em>made it ourselves?</em></h2><p>That’s where the best projects begin. The Little Flight Radar is an early build in progress: a round-screen aircraft tracker made to turn signals in the sky into a hands-on discovery at home.</p><div class="feature-bullets"><span><b>01</b> Build the pieces</span><span><b>02</b> See it come to life</span><span><b>03</b> Keep exploring</span></div><a class="button button-dark" href="/projects/little-flight-radar/">Meet Little Flight Radar <span aria-hidden="true">→</span></a></div></div></section>
+<section class="section how-section" id="how-it-works"><div class="container"><div class="section-heading compact"><div><span class="eyebrow"><span class="eyebrow-line"></span> THE LITTLE PROJECT WAY</span><h2>Made for the <em>“we did it!”</em> moment.</h2></div></div><div class="steps-grid"><div class="step-card"><span>01 / START</span><div class="step-icon">◇</div><h3>Pick a project</h3><p>Find a build that sparks a question. Our early kits are being designed with beginners and families in mind.</p></div><div class="step-card"><span>02 / MAKE</span><div class="step-icon">✳</div><h3>Build it together</h3><p>Follow a clear route from the first component to that satisfying moment when it comes to life.</p></div><div class="step-card"><span>03 / EXPLORE</span><div class="step-icon">→</div><h3>See where it goes</h3><p>Play, test, tweak and learn something new. The build is the beginning of the adventure.</p></div></div></div></section>
+<section class="range-section"><div class="container range-layout"><div><span class="eyebrow light"><span class="eyebrow-line"></span> MORE IDEAS ON THE TABLE</span><h2>A whole world of<br><em>little projects.</em></h2><p>We're working toward a varied catalogue of 30+ projects over time. First come the builds we can prototype properly; other ideas stay in research until they're ready to earn a place.</p><a class="button button-outline-light" href="/projects/">Explore the workbench <span aria-hidden="true">→</span></a></div><div class="range-list"><div><span>01</span><strong>Electronics & coding</strong><small>First prototypes</small></div><div><span>02</span><strong>Robotics & RC</strong><small>First prototypes</small></div><div><span>03</span><strong>Miniature engineering</strong><small>In research</small></div><div><span>04</span><strong>Models & discovery</strong><small>In research</small></div></div></div></section>
+<section class="signup-section" id="updates"><div class="container signup-layout">
+  <div class="signup-copy"><span class="eyebrow light"><span class="eyebrow-line"></span> THE GOOD STUFF, FIRST</span><h2>Be first to<br><em>build.</em></h2><p>Follow the prototypes, get behind-the-scenes notes and hear when the first kits are ready.</p><div class="signup-small"><span>✳</span> Thoughtful updates, not inbox clutter.</div></div>
+  <div class="signup-form-card"><div class="form-kicker">JOIN THE BUILD CREW <span>→</span></div><h3>Curiosity looks good on you.</h3><p>Sign up for launch news from My Little Project.</p><div class="ml-embedded" data-form="SNDM4W"></div><small>By subscribing, you agree to receive our emails. Unsubscribe anytime. Read our <a href="/privacy-policy/">privacy policy</a>.</small></div>
+</div></section>
+<script>(function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');ml('account','2743003');</script>
+<section class="closing-note"><div class="container"><span>✳</span><p>Because the best way to learn something new<br>is to <em>make something together.</em></p><a class="text-link" href="/about/">Get to know us <span aria-hidden="true">→</span></a></div></section>
+</main><footer class="site-footer"><div class="container footer-main">
+  <div><a class="footer-brand" href="/">my little project<span>.</span></a><p>Little projects. Big memories.<br>Made for curious minds and time well spent together.</p></div>
+  <div><h2>Explore</h2><a href="/projects/">All projects</a><a href="/projects/little-flight-radar/">Little Flight Radar</a><a href="/projects/little-rc-buggy/">Little RC Buggy</a><a href="/about/">Our story</a></div>
+  <div><h2>Stay in the loop</h2><a href="/#updates">Launch updates</a><a href="mailto:hello@mylittleproject.co.uk">Say hello</a><a href="/privacy-policy/">Privacy policy</a></div>
+  <div class="footer-stamp" aria-hidden="true">made<br><em>together</em><span>✳</span></div>
+</div><div class="container footer-bottom"><span>© <span id="year">2026</span> My Little Project. Built with curiosity in the UK.</span><span>Build. Learn. Create.</span></div></footer>
+<script src="/assets/site.js" defer></script>
+</body></html>
