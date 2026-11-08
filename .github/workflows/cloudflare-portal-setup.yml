@@ -1,0 +1,44 @@
+name: Configure My Little Project portal
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Inspect first; Apply creates/migrates D1 and binds Production
+        type: choice
+        options: [inspect, apply]
+        default: inspect
+        required: true
+      account_id:
+        description: Cloudflare account ID (32 hexadecimal characters)
+        type: string
+        required: true
+      clerk_publishable_key:
+        description: Optional production Clerk pk_live_ key (public value)
+        type: string
+        required: false
+      clerk_issuer:
+        description: Optional exact production Clerk HTTPS issuer origin
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-portal-setup
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect or configure Production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
+          CLERK_PUBLISHABLE_KEY: ${{ inputs.clerk_publishable_key }}
+          CLERK_ISSUER: ${{ inputs.clerk_issuer }}
+          SETUP_MODE: ${{ inputs.mode }}
+        run: python3 scripts/cloudflare_portal_setup.py --mode "$SETUP_MODE"
