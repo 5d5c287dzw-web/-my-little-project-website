@@ -73,6 +73,7 @@ class Cloudflare:
     def call(self, method: str, path: str, body: dict | None = None):
         if not path.startswith(self.path + "/"):
             raise SetupError("Cloudflare API path is outside the selected account")
+        endpoint = path.split("?", 1)[0].removeprefix(self.path)
         payload = json.dumps(body).encode() if body is not None else None
         request = Request(
             BASE + path,
@@ -90,10 +91,11 @@ class Cloudflare:
         except HTTPError as error:
             try:
                 details = json.load(error)
-                messages = "; ".join(str(item.get("message", "API error")) for item in details.get("errors", []))
+                messages = "; ".join(f"{item.get('code', '?')}: {item.get('message', 'API error')}"
+                                     for item in details.get("errors", []))
             except (ValueError, AttributeError):
                 messages = "API request failed"
-            raise SetupError(f"Cloudflare API HTTP {error.code}: {messages[:400]}") from None
+            raise SetupError(f"Cloudflare API {method} {endpoint} HTTP {error.code}: {messages[:400]}") from None
         except (URLError, TimeoutError) as error:
             raise SetupError(f"Cloudflare API connection failed: {type(error).__name__}") from None
         if not data.get("success"):
@@ -263,7 +265,7 @@ def main():
     account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
     if not account_id:
         account_id = discover_account_id(token)
-        print("Matched the Cloudflare account to the expected GitHub-backed Pages project.")
+        print("Matched the Cloudflare account to the expected GitHub-backed Pages project.", flush=True)
     client = Cloudflare(token, account_id)
     variables = clerk_variables(os.environ.get("CLERK_PUBLISHABLE_KEY", ""),
                                 os.environ.get("CLERK_ISSUER", ""))
