@@ -1,0 +1,9 @@
+{
+  "production_db_id": "c34c3f9e-1e40-46e2-9395-0b2b0612dfba",
+  "preview_db_id": "4deb5991-bc0e-4e9b-9834-903dea5652e2",
+  "target_db_id": "c34c3f9e-1e40-46e2-9395-0b2b0612dfba",
+  "production_fail_open": false,
+  "production_variable_names": ["CLERK_ALLOWED_ORIGINS", "CLERK_ISSUER", "CLERK_JWKS_URL"],
+  "clerk_publishable_key": "pk_live_Y2xlcmsubXlsaXR0bGVwcm9qZWN0LmNvLnVrJA",
+  "clerk_issuer": "https://clerk.mylittleproject.co.uk"
+}
