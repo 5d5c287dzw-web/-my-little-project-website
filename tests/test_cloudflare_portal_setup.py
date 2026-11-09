@@ -1,4 +1,5 @@
 import importlib.util
+import base64
 import io
 import copy
 import json
@@ -126,9 +127,21 @@ class CloudflareSetupTests(unittest.TestCase):
             setup.clerk_variables("pk_test_development", "https://example.accounts.dev")
         with self.assertRaises(setup.SetupError):
             setup.clerk_variables("pk_live_example", "")
-        variables = setup.clerk_variables("pk_live_example", "https://clerk.example.com")
+        key = "pk_live_" + base64.urlsafe_b64encode(b"clerk.example.com$").decode().rstrip("=")
+        with self.assertRaisesRegex(setup.SetupError, "does not match"):
+            setup.clerk_variables(key, "https://other.example.com")
+        variables = setup.clerk_variables(key, "https://clerk.example.com")
         self.assertEqual(variables["CLERK_ALLOWED_ORIGINS"]["value"], setup.SHOP_ORIGIN)
         self.assertEqual(variables["CLERK_JWKS_URL"]["value"], "https://clerk.example.com/.well-known/jwks.json")
+
+    def test_clerk_signing_keys_must_be_reachable_before_apply(self):
+        key = "pk_live_" + base64.urlsafe_b64encode(b"clerk.example.com$").decode().rstrip("=")
+        variables = setup.clerk_variables(key, "https://clerk.example.com")
+        with patch.object(setup, "urlopen", return_value=io.BytesIO(b'{"keys":[{"kty":"RSA"}]}')):
+            setup.verify_clerk_signing_keys(variables)
+        with patch.object(setup, "urlopen", return_value=io.BytesIO(b'{"keys":[]}')):
+            with self.assertRaisesRegex(setup.SetupError, "not ready"):
+                setup.verify_clerk_signing_keys(variables)
 
     def test_apply_creates_separate_database_and_patches_only_production(self):
         client = FakeCloudflare()
