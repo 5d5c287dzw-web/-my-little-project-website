@@ -31,17 +31,17 @@ window.addEventListener('load',async()=>{
    clerk.mountUserButton(root);
    try{
     const account=await loadAccountStatus(clerk);
-    const target=account.workspace==='admin'?'/admin/':account.workspace==='creator'?'/studio/':'/';
+    const target=account.assignedRole==='admin'?'/admin/':account.workspace==='creator'?'/studio/':'/';
     const destination=next==='/'?target:next===target?next:'/';
     const continueLink=document.getElementById('continue-link');
     continueLink.href=destination;
-    continueLink.textContent=destination==='/'?'Continue to the shop →':'Continue to your workspace →';
-    document.getElementById('admin-link').hidden=account.workspace!=='admin';
+    continueLink.textContent=destination==='/'?'Continue to the shop →':account.adminSecondFactorRequired?'Open Admin security check →':'Continue to your workspace →';
+    document.getElementById('admin-link').hidden=account.assignedRole!=='admin';
     document.getElementById('studio-link').hidden=account.workspace!=='creator';
     document.getElementById('account-user-id').textContent=account.userId;
     document.getElementById('account-identity').hidden=false;
     document.getElementById('account-links').hidden=false;
-    status.textContent=account.adminSecondFactorRequired?'Signed in. Admin access needs an additional security check.':
+    status.textContent=account.adminSecondFactorRequired?'Signed in. Open Admin desk to complete its separate security check.':
      account.workspace?'Signed in securely. Your workspace is ready.':
      'Signed in securely. Workspace access is approved separately.';
    }catch{
