@@ -6,6 +6,7 @@ import {onRequestGet as adminGet,onRequestPost as adminPost,onRequestPatch as ad
 import {onRequestGet as creatorGet,onRequestPost as creatorPost,onRequestPatch as creatorPatch} from '../functions/api/creator/workspace.js';
 import {onRequestGet as shopGet} from '../functions/api/shop.js';
 import {onRequestGet as authConfigGet} from '../functions/api/auth-config.js';
+import {onRequestGet as accountStatusGet} from '../functions/api/account-status.js';
 import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
@@ -41,6 +42,20 @@ test('public sign-in config rejects a Clerk key from another issuer',async()=>{
  const mixed=await result(await authConfigGet({env:{...configured,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.json'}}));
  assert.equal(mixed.status,503);
  assert.equal(mixed.body.error,'sign_in_not_configured');
+});
+
+test('account status verifies its own session and exposes only approved workspace access',async()=>{
+ assert.equal((await result(await accountStatusGet(context('/api/account-status','GET')))).status,401);
+ assert.equal((await result(await accountStatusGet(context('/api/account-status','GET','bad.token')))).status,401);
+ const customer=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_customer'))));
+ assert.deepEqual(customer.body,{authenticated:true,userId:'user_customer',workspace:null,adminSecondFactorRequired:false});
+ const creator=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_creator_a'))));
+ assert.equal(creator.body.workspace,'creator');
+ const adminWithoutMfa=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_admin',[3,-1]))));
+ assert.equal(adminWithoutMfa.body.workspace,null);
+ assert.equal(adminWithoutMfa.body.adminSecondFactorRequired,true);
+ const admin=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_admin'))));
+ assert.equal(admin.body.workspace,'admin');
 });
 
 test('staff endpoints fail closed and require recent second factor for writes',async()=>{
