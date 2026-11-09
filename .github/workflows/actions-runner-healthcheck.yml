@@ -9,4 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Checkout completed"
+      - name: Check built-in secret injection
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: test -n "$TOKEN" && echo "Built-in token present"
