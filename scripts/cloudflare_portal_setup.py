@@ -269,7 +269,9 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
         time.sleep(5)
     else:
         raise SetupError("Pages redeployment has not completed within two minutes")
-    for _ in range(12):
+    # Pages may report deployment success before the custom domain serves the
+    # newly bound Function. Give propagation up to three minutes.
+    for _ in range(36):
         try:
             with urlopen(SHOP_ORIGIN + "/api/shop", timeout=10) as response:
                 live_catalogue = json.load(response)
@@ -279,7 +281,7 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
             pass
         time.sleep(5)
     else:
-        raise SetupError("Live catalogue API did not see the production D1 schema after redeployment")
+        raise SetupError("Live catalogue API did not see the production D1 schema within three minutes after redeployment")
     print("Live catalogue API confirmed the production D1 connection.")
     if variables:
         try:
