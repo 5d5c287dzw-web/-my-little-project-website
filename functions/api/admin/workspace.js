@@ -90,7 +90,7 @@ async function review(db,actor,body){
 
 export async function onRequestGet({request,env}){
  try{
-  await requireStaff(request,env,"admin",{mfaMaxAgeMinutes:720});
+  await requireStaff(request,env,"admin");
   const [categories,products,campaigns,submissions,submissionResources,auditEvents]=await Promise.all([
    env.DB.prepare("SELECT id,slug,name,description,sort_order AS sortOrder,active,updated_at AS updatedAt FROM shop_categories ORDER BY sort_order,name LIMIT 200").all(),
    env.DB.prepare("SELECT id,slug,title,category_id AS categoryId,summary,description,kit_stage AS kitStage,visibility,price_pence AS pricePence,price_confirmed AS priceConfirmed,supplier_strategy AS supplierStrategy,updated_at AS updatedAt FROM shop_products ORDER BY updated_at DESC LIMIT 200").all(),
@@ -105,7 +105,7 @@ export async function onRequestGet({request,env}){
 
 async function mutate({request,env},update){
  try{
-  const actor=await requireStaff(request,env,"admin",{mfaMaxAgeMinutes:30});
+  const actor=await requireStaff(request,env,"admin");
   const body=await readBody(request);
   const result=body.type==="review"?await review(env.DB,actor.userId,body):await saveRecord(env.DB,actor.userId,body,update);
   return staffJson(result);
