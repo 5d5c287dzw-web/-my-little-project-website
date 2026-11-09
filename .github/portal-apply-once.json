@@ -1,7 +1,0 @@
-{
-  "production_db_id": "4deb5991-bc0e-4e9b-9834-903dea5652e2",
-  "preview_db_id": "4deb5991-bc0e-4e9b-9834-903dea5652e2",
-  "target_db_id": null,
-  "production_fail_open": true,
-  "production_variable_names": ["CLERK_ALLOWED_ORIGINS", "CLERK_ISSUER", "CLERK_JWKS_URL"]
-}
