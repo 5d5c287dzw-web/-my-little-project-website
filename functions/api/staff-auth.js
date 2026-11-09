@@ -1,4 +1,5 @@
 import {verifyClerkToken} from "./me.js";
+import {verifyAdminProof} from "./admin-proof.js";
 
 export class AccessError extends Error { constructor(code,status){super(code);this.status=status;} }
 
@@ -8,7 +9,7 @@ function sessionCookie(request){
  return item ? item.slice("__session=".length) : null;
 }
 
-export async function requireStaff(request,env,role,{allowCookie=false,mfaMaxAgeMinutes=null}={}){
+export async function requireStaff(request,env,role,{allowCookie=false}={}){
  if(!env.DB)throw new AccessError("staff_database_unavailable",503);
  const auth=request.headers.get("Authorization")||"";
  const token=auth.startsWith("Bearer ") ? auth.slice(7) : allowCookie ? sessionCookie(request) : null;
@@ -23,9 +24,13 @@ export async function requireStaff(request,env,role,{allowCookie=false,mfaMaxAge
  try{staff=await env.DB.prepare("SELECT role,enabled FROM staff_access WHERE clerk_user_id=?").bind(claims.sub).first();}
  catch{throw new AccessError("staff_access_not_configured",503);}
  if(!staff||staff.enabled!==1||staff.role!==role)throw new AccessError("access_denied",403);
- // Clerk's fva[1] is the number of minutes since the second factor was verified.
- if(mfaMaxAgeMinutes!==null && (!Array.isArray(claims.fva)||!Number.isInteger(claims.fva[1])||claims.fva[1]<0||claims.fva[1]>mfaMaxAgeMinutes))
-  throw new AccessError("second_factor_required",403);
+ if(role==="admin"){
+  try{await verifyAdminProof(request,env);}
+  catch(e){
+   const unavailable=["admin_access_not_configured","admin_verification_unavailable"].includes(e.message);
+   throw new AccessError(unavailable?"admin_verification_unavailable":e.message==="admin_verification_required"?"admin_verification_required":"invalid_admin_verification",unavailable?503:403);
+  }
+ }
  return {userId:claims.sub,role:staff.role};
 }
 
