@@ -26,7 +26,7 @@ def project(production_db="dev-id", preview_db="dev-id"):
             "production": {"d1_databases": {"DB": {"id": production_db}},
                            "env_vars": {"EXISTING": {"type": "plain_text", "value": "kept"}},
                            "fail_open": True},
-            "preview": {"d1_databases": {"DB": {"id": preview_db}}},
+            "preview": {"d1_databases": {"DB": {"id": preview_db}}, "fail_open": True},
         },
         "canonical_deployment": {"id": "old-deployment"},
     }
@@ -63,6 +63,7 @@ class FakeCloudflare:
             production["d1_databases"].update(patch["d1_databases"])
             production["fail_open"] = patch["fail_open"]
             production["env_vars"].update(patch.get("env_vars", {}))
+            self.state["deployment_configs"]["preview"]["fail_open"] = body["deployment_configs"]["preview"]["fail_open"]
             return {"result": self.state}
         if method == "POST" and path.endswith("/retry"):
             return {"result": {"id": "new-deployment"}}
@@ -138,8 +139,10 @@ class CloudflareSetupTests(unittest.TestCase):
             setup.apply(client, before, plan, {})
         payload = next(body for method, _, body in client.calls if method == "PATCH")
         self.assertEqual(payload, {"deployment_configs": {"production": {
-            "d1_databases": {"DB": {"id": "production-id"}}, "fail_open": False}}})
-        self.assertEqual(client.project()["deployment_configs"]["preview"], original_preview)
+            "d1_databases": {"DB": {"id": "production-id"}}, "fail_open": False},
+            "preview": {"fail_open": False}}})
+        self.assertEqual(client.project()["deployment_configs"]["preview"], {
+            **original_preview, "fail_open": False})
         self.assertEqual(client.project()["deployment_configs"]["production"]["env_vars"]["EXISTING"]["value"], "kept")
         self.assertTrue(any(method == "QUERY" and "CREATE TABLE" in sql
                             for method, _, sql in client.calls if method == "QUERY"))

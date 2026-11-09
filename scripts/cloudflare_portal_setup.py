@@ -218,8 +218,11 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
     production_patch = {"d1_databases": {"DB": {"id": target_id}}, "fail_open": False}
     if variables:
         production_patch["env_vars"] = variables
+    # Pages requires fail_open to agree across both environments. This Preview
+    # patch changes only that setting; its DB and variables remain untouched.
     client.call("PATCH", client.path + "/pages/projects/" + PROJECT,
-                {"deployment_configs": {"production": production_patch}})
+                {"deployment_configs": {"production": production_patch,
+                                        "preview": {"fail_open": False}}})
     after = client.project()
     actual = inspect(after, client.databases())
     if actual["production_db"]["id"] != target_id or actual["production_fail_open"] is not False:
@@ -228,6 +231,8 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
         raise SetupError("Preview DB changed unexpectedly; inspect Pages settings")
     old_preview = (before.get("deployment_configs") or {}).get("preview") or {}
     new_preview = (after.get("deployment_configs") or {}).get("preview") or {}
+    if new_preview.get("fail_open") is not False:
+        raise SetupError("Preview fail-closed setting did not persist")
     for field in ("d1_databases", "env_vars", "r2_buckets", "kv_namespaces"):
         if old_preview.get(field) != new_preview.get(field):
             raise SetupError(f"Preview {field} changed unexpectedly; inspect Pages settings")
@@ -244,7 +249,7 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
     new_bindings = (after.get("deployment_configs", {}).get("production") or {}).get("d1_databases") or {}
     if any(new_bindings.get(key) != value for key, value in old_bindings.items() if key != "DB"):
         raise SetupError("An unrelated production D1 binding changed unexpectedly")
-    print("Verified Production DB binding and fail-closed setting; Preview DB stayed separate.")
+    print("Verified Production DB binding and both fail-closed settings; Preview DB stayed separate.")
 
     deployment = after.get("canonical_deployment") or {}
     deployment_id = deployment.get("id")
