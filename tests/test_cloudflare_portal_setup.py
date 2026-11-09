@@ -2,6 +2,7 @@ import importlib.util
 import io
 import copy
 import json
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -71,6 +72,28 @@ class FakeCloudflare:
 
 
 class CloudflareSetupTests(unittest.TestCase):
+    def test_push_apply_requires_the_exact_inspected_plan(self):
+        inspected = setup.inspect(project(), [{"name": "mlp-workshop-dev", "uuid": "dev-id"}])
+        expected = {
+            "production_db_id": "dev-id",
+            "preview_db_id": "dev-id",
+            "target_db_id": None,
+            "production_fail_open": True,
+            "production_variable_names": ["EXISTING"],
+        }
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "push"}), \
+             patch.object(Path, "is_file", return_value=True), \
+             patch.object(Path, "read_text", return_value=json.dumps(expected)):
+            setup.check_expected_plan(inspected)
+            changed = copy.deepcopy(inspected)
+            changed["preview_db"]["id"] = "another-preview"
+            with self.assertRaisesRegex(setup.SetupError, "changed since inspection"):
+                setup.check_expected_plan(changed)
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "push"}), \
+             patch.object(Path, "is_file", return_value=False):
+            with self.assertRaisesRegex(setup.SetupError, "one-time plan marker"):
+                setup.check_expected_plan(inspected)
+
     def test_discovers_only_the_account_with_the_expected_pages_source(self):
         accounts = {"success": True, "result": [{"id": "a" * 32}, {"id": "b" * 32}],
                     "result_info": {"total_count": 2}}

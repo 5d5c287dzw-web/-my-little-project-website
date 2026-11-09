@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/cloudflare-portal-setup.yml
       - scripts/cloudflare_portal_setup.py
+      - .github/portal-apply-once.json
   workflow_dispatch:
     inputs:
       mode:
@@ -45,5 +46,5 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.account_id }}
           CLERK_PUBLISHABLE_KEY: ${{ inputs.clerk_publishable_key }}
           CLERK_ISSUER: ${{ inputs.clerk_issuer }}
-          SETUP_MODE: ${{ github.event_name == 'push' && 'inspect' || inputs.mode }}
+          SETUP_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || hashFiles('.github/portal-apply-once.json') != '' && 'apply' || 'inspect' }}
         run: python3 scripts/cloudflare_portal_setup.py --mode "$SETUP_MODE"
