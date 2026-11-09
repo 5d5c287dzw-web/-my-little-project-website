@@ -5,6 +5,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {onRequestGet as adminGet,onRequestPost as adminPost,onRequestPatch as adminPatch} from '../functions/api/admin/workspace.js';
 import {onRequestGet as creatorGet,onRequestPost as creatorPost,onRequestPatch as creatorPatch} from '../functions/api/creator/workspace.js';
 import {onRequestGet as shopGet} from '../functions/api/shop.js';
+import {onRequestGet as authConfigGet} from '../functions/api/auth-config.js';
 import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
@@ -31,6 +32,16 @@ const env={DB:d1,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.js
 const request=(path,method='GET',session=null,body=null,cookie=false)=>new Request(origin+path,{method,headers:{...(session?{[cookie?'Cookie':'Authorization']:cookie?'__session='+session:'Bearer '+session}:{}),...(body?{'Content-Type':'application/json','Origin':origin}:{})},body:body?JSON.stringify(body):undefined});
 const context=(path,method,session,body)=>({request:request(path,method,session,body),env});
 const result=async response=>({status:response.status,body:await response.json()});
+
+test('public sign-in config rejects a Clerk key from another issuer',async()=>{
+ const production='https://clerk.mylittleproject.co.uk';
+ const key='pk_live_'+Buffer.from('clerk.mylittleproject.co.uk$').toString('base64url');
+ const configured={CLERK_PUBLISHABLE_KEY:key,CLERK_ISSUER:production,CLERK_JWKS_URL:production+'/.well-known/jwks.json',CLERK_ALLOWED_ORIGINS:origin};
+ assert.equal((await result(await authConfigGet({env:configured}))).body.frontendApiOrigin,production);
+ const mixed=await result(await authConfigGet({env:{...configured,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.json'}}));
+ assert.equal(mixed.status,503);
+ assert.equal(mixed.body.error,'sign_in_not_configured');
+});
 
 test('staff endpoints fail closed and require recent second factor for writes',async()=>{
  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET')))).status,401);
