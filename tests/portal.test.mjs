@@ -11,27 +11,44 @@ import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
 const issuer='https://clerk.example.test';
+const accessIssuer='https://mlp-admin.cloudflareaccess.com';
+const accessAudience='adminApplicationAudience';
+const accessEmail='owner@example.test';
 const now=Math.floor(Date.now()/1000);
 const pair=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
 const jwk=await crypto.subtle.exportKey('jwk',pair.publicKey);jwk.kid='unit-key';jwk.alg='RS256';jwk.use='sig';
-globalThis.fetch=async url=>{assert.equal(url,issuer+'/.well-known/jwks.json');return new Response(JSON.stringify({keys:[jwk]}));};
+const accessPair=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
+const accessJwk=await crypto.subtle.exportKey('jwk',accessPair.publicKey);accessJwk.kid='access-key';accessJwk.alg='RS256';accessJwk.use='sig';
+globalThis.fetch=async url=>{
+ if(url===issuer+'/.well-known/jwks.json')return new Response(JSON.stringify({keys:[jwk]}));
+ assert.equal(url,accessIssuer+'/cdn-cgi/access/certs');return new Response(JSON.stringify({keys:[accessJwk]}));
+};
 const b64=bytes=>Buffer.from(bytes).toString('base64url');
-async function token(user,fva=[3,2]){
+async function token(user,fva=[3,-1]){
  const header=b64(JSON.stringify({alg:'RS256',typ:'JWT',kid:'unit-key'}));
  const payload=b64(JSON.stringify({iss:issuer,sub:user,sid:'sess_example',azp:origin,iat:now-20,exp:now+300,fva}));
  const message=header+'.'+payload;
  const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',pair.privateKey,new TextEncoder().encode(message));
  return message+'.'+b64(signature);
 }
+async function accessToken({email=accessEmail,aud=accessAudience,exp=now+300,type='app'}={}){
+ const header=b64(JSON.stringify({alg:'RS256',typ:'JWT',kid:'access-key'}));
+ const payload=b64(JSON.stringify({iss:accessIssuer,aud:[aud],email,iat:now-20,nbf:now-20,exp,type,sub:'access-owner'}));
+ const message=header+'.'+payload;
+ const signature=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',accessPair.privateKey,new TextEncoder().encode(message));
+ return message+'.'+b64(signature);
+}
+const adminProof=await accessToken();
 const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('../database/003_portal_workspace.sql',import.meta.url),'utf8'));
 db.exec("INSERT INTO staff_access(clerk_user_id,role,enabled,granted_by) VALUES ('user_admin','admin',1,'test'),('user_creator_a','creator',1,'test'),('user_creator_b','creator',1,'test')");
 const d1={
  prepare(sql){let params=[];return {bind(...values){params=values;return this;},async first(){return db.prepare(sql).get(...params)??null;},async all(){return {results:db.prepare(sql).all(...params)};},async run(){return db.prepare(sql).run(...params);}};},
  async batch(statements){db.exec('BEGIN');try{const result=[];for(const statement of statements)result.push(await statement.run());db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}
 };
-const env={DB:d1,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.json',CLERK_ALLOWED_ORIGINS:origin};
-const request=(path,method='GET',session=null,body=null,cookie=false)=>new Request(origin+path,{method,headers:{...(session?{[cookie?'Cookie':'Authorization']:cookie?'__session='+session:'Bearer '+session}:{}),...(body?{'Content-Type':'application/json','Origin':origin}:{})},body:body?JSON.stringify(body):undefined});
-const context=(path,method,session,body)=>({request:request(path,method,session,body),env});
+const env={DB:d1,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.json',CLERK_ALLOWED_ORIGINS:origin,
+ ADMIN_ACCESS_TEAM_DOMAIN:accessIssuer,ADMIN_ACCESS_AUD:accessAudience,ADMIN_ACCESS_EMAIL:accessEmail};
+const request=(path,method='GET',session=null,body=null,cookie=false,proof=adminProof)=>new Request(origin+path,{method,headers:{...(session?{[cookie?'Cookie':'Authorization']:cookie?'__session='+session:'Bearer '+session}:{}),...(proof?{'Cf-Access-Jwt-Assertion':proof}:{}),...(body?{'Content-Type':'application/json','Origin':origin}:{})},body:body?JSON.stringify(body):undefined});
+const context=(path,method,session,body,proof=adminProof)=>({request:request(path,method,session,body,false,proof),env});
 const result=async response=>({status:response.status,body:await response.json()});
 
 test('public sign-in config rejects a Clerk key from another issuer',async()=>{
@@ -48,25 +65,33 @@ test('account status verifies its own session and exposes only approved workspac
  assert.equal((await result(await accountStatusGet(context('/api/account-status','GET')))).status,401);
  assert.equal((await result(await accountStatusGet(context('/api/account-status','GET','bad.token')))).status,401);
  const customer=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_customer'))));
- assert.deepEqual(customer.body,{authenticated:true,userId:'user_customer',workspace:null,adminSecondFactorRequired:false});
+ assert.deepEqual(customer.body,{authenticated:true,userId:'user_customer',assignedRole:null,workspace:null,adminSecondFactorRequired:false});
  const creator=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_creator_a'))));
- assert.equal(creator.body.workspace,'creator');
- const adminWithoutMfa=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_admin',[3,-1]))));
- assert.equal(adminWithoutMfa.body.workspace,null);
- assert.equal(adminWithoutMfa.body.adminSecondFactorRequired,true);
+ assert.equal(creator.body.assignedRole,'creator');assert.equal(creator.body.workspace,'creator');
+ const adminWithoutAccess=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_admin'),null,null)));
+ assert.equal(adminWithoutAccess.body.assignedRole,'admin');
+ assert.equal(adminWithoutAccess.body.workspace,null);
+ assert.equal(adminWithoutAccess.body.adminSecondFactorRequired,true);
  const admin=await result(await accountStatusGet(context('/api/account-status','GET',await token('user_admin'))));
  assert.equal(admin.body.workspace,'admin');
 });
 
-test('staff endpoints fail closed and require recent second factor for writes',async()=>{
+test('admin endpoints require both Clerk role and separately signed Access application proof',async()=>{
  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET')))).status,401);
  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET','bad.token')))).status,401);
  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',await token('user_creator_a'))))).status,403);
  assert.equal((await result(await adminGet({request:request('/api/admin/workspace'),env:{}}))).status,503);
- const noMfa=await token('user_admin',[3,-1]);
- assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',noMfa)))).body.error,'second_factor_required');
+ const noMfa=await token('user_admin');
+ assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',noMfa,null,null)))).body.error,'admin_verification_required');
  const record={type:'category',name:'Miniature Engineering',slug:'miniature-engineering',description:'Tiny mechanisms',sortOrder:40,active:true};
- assert.equal((await result(await adminPost(context('/api/admin/workspace','POST',noMfa,record)))).body.error,'second_factor_required');
+ assert.equal((await result(await adminPost(context('/api/admin/workspace','POST',noMfa,record,null)))).body.error,'admin_verification_required');
+ const [accessHeader,,accessSignature]=adminProof.split('.');
+ const tampered=accessHeader+'.'+b64(JSON.stringify({iss:accessIssuer,aud:[accessAudience],email:accessEmail,iat:now-20,exp:now+300,type:'app',sub:'tampered'}))+'.'+accessSignature;
+ for(const proof of [await accessToken({email:'someone-else@example.test'}),await accessToken({aud:'anotherApplication'}),await accessToken({exp:now-1}),await accessToken({type:'org'}),tampered,'bad.token']){
+  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',noMfa,null,proof)))).status,403);
+ }
+ assert.equal((await result(await adminGet({request:request('/api/admin/workspace','GET',noMfa),env:{...env,ADMIN_ACCESS_AUD:''}}))).status,503);
+ assert.equal((await result(await adminGet({request:request('/api/admin/workspace','GET',noMfa),env:{...env,ADMIN_ACCESS_AUD:'anotherApplication,'+accessAudience}}))).status,200);
  const admin=await token('user_admin');
  const created=await result(await adminPost(context('/api/admin/workspace','POST',admin,record)));
  assert.equal(created.status,200);assert.ok(created.body.id);
@@ -114,6 +139,8 @@ test('page middleware blocks anonymous and wrong-role visitors',async()=>{
  assert.equal(anonymous.status,302);assert.match(anonymous.headers.get('Location'),/\/account\//);
  const wrong=await privatePage({request:request('/admin/','GET',await token('user_creator_a'),null,true),env,next:()=>new Response('private page')});
  assert.equal(wrong.status,403);
+ const noAccess=await privatePage({request:request('/admin/','GET',await token('user_admin'),null,true,null),env,next:()=>new Response('private page')});
+ assert.equal(noAccess.status,403);
  const allowed=await privatePage({request:request('/admin/','GET',await token('user_admin'),null,true),env,next:()=>new Response('private page')});
  assert.equal(allowed.status,200);assert.equal(await allowed.text(),'private page');
  assert.equal(allowed.headers.get('Cache-Control'),'private, no-store');
