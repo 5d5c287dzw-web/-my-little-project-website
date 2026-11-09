@@ -20,6 +20,12 @@ The manual workflow never grants a staff role or enables checkout. It makes no c
 - Production `/api/auth-config` still returns `sign_in_not_configured`: `CLERK_PUBLISHABLE_KEY` is missing. No production Clerk account or staff role has been verified or granted. Admin and Creator Studio cannot be used yet.
 - The one-time push trigger was removed. Ordinary pushes run `inspect` only. The Cloudflare API token remains in the GitHub Actions secret until the Clerk setup and final checks are complete.
 
+## Clerk production setup pending
+
+- The production `pk_live_` publishable key supplied by the owner decodes to `clerk.mylittleproject.co.uk`. It is public configuration; no Clerk secret key has been supplied or stored.
+- A guarded run checked `https://clerk.mylittleproject.co.uk/.well-known/jwks.json` before changing Pages. The signing keys were unavailable on 9 November 2026, so it made no Production configuration change. Complete the exact DNS records and certificate checks shown in Clerk **Production → Domains**, then rerun the failed guarded job or use the manual `apply` workflow with the public key and issuer.
+- Clerk's free production plan does not provide the second factor used by the current Admin Desk gate. Keep admin access ungranted while a separate strong admin authentication route is designed and verified. Creator/customer email sign-in can be tested once Clerk's production domain is ready.
+
 Example role grant, with values deliberately left as placeholders:
 
 ```sql
