@@ -8,6 +8,8 @@ containing Pages environment variable values or the token itself.
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 import os
 import re
@@ -172,6 +174,13 @@ def clerk_variables(key: str, issuer: str):
             or parsed.path not in ("", "/") or parsed.query or parsed.fragment
             or parsed.hostname.endswith(".accounts.dev")):
         raise SetupError("Provide both a production pk_live_ Clerk key and its exact HTTPS issuer origin")
+    encoded_host = key.removeprefix("pk_live_")
+    try:
+        decoded = base64.urlsafe_b64decode(encoded_host + "=" * (-len(encoded_host) % 4)).decode("ascii")
+    except (ValueError, UnicodeDecodeError, binascii.Error):
+        raise SetupError("Production Clerk publishable key cannot be decoded") from None
+    if decoded.split("$", 1)[0] != parsed.hostname or "$" not in decoded:
+        raise SetupError("Production Clerk key does not match the issuer hostname")
     origin = parsed.scheme + "://" + parsed.netloc
     return {
         "CLERK_PUBLISHABLE_KEY": {"type": "plain_text", "value": key},
@@ -181,14 +190,21 @@ def clerk_variables(key: str, issuer: str):
     }
 
 
-def check_expected_plan(plan: dict):
-    """A push-triggered apply is allowed only for the inspected configuration."""
-    if os.environ.get("GITHUB_EVENT_NAME") != "push":
-        return
+def read_push_marker():
     marker = Path(__file__).resolve().parents[1] / ".github/portal-apply-once.json"
     if not marker.is_file():
         raise SetupError("Push-triggered apply requires the one-time plan marker")
-    expected = json.loads(marker.read_text())
+    try:
+        return json.loads(marker.read_text())
+    except ValueError:
+        raise SetupError("One-time plan marker is invalid JSON") from None
+
+
+def check_expected_plan(plan: dict, expected: dict | None = None):
+    """A push-triggered apply is allowed only for the inspected configuration."""
+    if os.environ.get("GITHUB_EVENT_NAME") != "push":
+        return
+    expected = expected if expected is not None else read_push_marker()
     actual = {
         "production_db_id": plan["production_db"]["id"],
         "preview_db_id": plan["preview_db"]["id"],
@@ -196,8 +212,22 @@ def check_expected_plan(plan: dict):
         "production_fail_open": plan["production_fail_open"],
         "production_variable_names": plan["production_variable_names"],
     }
-    if actual != expected:
+    if not isinstance(expected, dict) or any(expected.get(key) != value for key, value in actual.items()):
         raise SetupError("Cloudflare configuration changed since inspection; refusing the one-time apply")
+
+
+def verify_clerk_signing_keys(variables: dict):
+    """Do not expose sign-in config while the production Clerk domain is unready."""
+    if not variables:
+        return
+    try:
+        with urlopen(variables["CLERK_JWKS_URL"]["value"], timeout=15) as response:
+            keys = json.load(response).get("keys")
+    except (HTTPError, URLError, TimeoutError, ValueError, AttributeError):
+        raise SetupError("Production Clerk signing keys are unavailable; finish Clerk DNS and certificate setup") from None
+    if not isinstance(keys, list) or not any(k.get("kty") == "RSA" for k in keys if isinstance(k, dict)):
+        raise SetupError("Production Clerk signing keys are not ready")
+    print("Verified production Clerk signing keys before changing Pages configuration.")
 
 
 def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
@@ -284,13 +314,17 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
         raise SetupError("Live catalogue API did not see the production D1 schema within three minutes after redeployment")
     print("Live catalogue API confirmed the production D1 connection.")
     if variables:
-        try:
-            with urlopen(SHOP_ORIGIN + "/api/auth-config", timeout=10) as response:
-                auth = json.load(response)
-        except (HTTPError, URLError, TimeoutError, ValueError):
-            raise SetupError("Live sign-in configuration did not become available") from None
-        if auth.get("publishableKey") != variables["CLERK_PUBLISHABLE_KEY"]["value"]:
-            raise SetupError("Live sign-in configuration does not match the supplied production Clerk key")
+        for _ in range(36):
+            try:
+                with urlopen(SHOP_ORIGIN + "/api/auth-config", timeout=10) as response:
+                    auth = json.load(response)
+                if auth.get("publishableKey") == variables["CLERK_PUBLISHABLE_KEY"]["value"]:
+                    break
+            except (HTTPError, URLError, TimeoutError, ValueError):
+                pass
+            time.sleep(5)
+        else:
+            raise SetupError("Live sign-in configuration did not match the production Clerk key within three minutes")
         print("Live sign-in configuration returned the production Clerk publishable key.")
 
 
@@ -304,8 +338,9 @@ def main():
         account_id = discover_account_id(token)
         print("Matched the Cloudflare account to the expected GitHub-backed Pages project.", flush=True)
     client = Cloudflare(token, account_id)
-    variables = clerk_variables(os.environ.get("CLERK_PUBLISHABLE_KEY", ""),
-                                os.environ.get("CLERK_ISSUER", ""))
+    marker = read_push_marker() if os.environ.get("GITHUB_EVENT_NAME") == "push" and args.mode == "apply" else {}
+    variables = clerk_variables(marker.get("clerk_publishable_key", os.environ.get("CLERK_PUBLISHABLE_KEY", "")),
+                                marker.get("clerk_issuer", os.environ.get("CLERK_ISSUER", "")))
     project = client.project()
     plan = inspect(project, client.databases())
     print("Production plan (no secrets):")
@@ -313,7 +348,8 @@ def main():
     if args.mode == "inspect":
         print("Inspection only. No Cloudflare changes were made.")
         return
-    check_expected_plan(plan)
+    check_expected_plan(plan, marker if marker else None)
+    verify_clerk_signing_keys(variables)
     apply(client, project, plan, variables)
 
 
