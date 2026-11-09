@@ -181,6 +181,25 @@ def clerk_variables(key: str, issuer: str):
     }
 
 
+def check_expected_plan(plan: dict):
+    """A push-triggered apply is allowed only for the inspected configuration."""
+    if os.environ.get("GITHUB_EVENT_NAME") != "push":
+        return
+    marker = Path(__file__).resolve().parents[1] / ".github/portal-apply-once.json"
+    if not marker.is_file():
+        raise SetupError("Push-triggered apply requires the one-time plan marker")
+    expected = json.loads(marker.read_text())
+    actual = {
+        "production_db_id": plan["production_db"]["id"],
+        "preview_db_id": plan["preview_db"]["id"],
+        "target_db_id": plan["target_db"]["id"],
+        "production_fail_open": plan["production_fail_open"],
+        "production_variable_names": plan["production_variable_names"],
+    }
+    if actual != expected:
+        raise SetupError("Cloudflare configuration changed since inspection; refusing the one-time apply")
+
+
 def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
     target_id = plan["target_db"]["id"]
     if not target_id:
@@ -207,6 +226,11 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
         raise SetupError("Production binding or fail-closed setting did not persist")
     if actual["preview_db"] != plan["preview_db"]:
         raise SetupError("Preview DB changed unexpectedly; inspect Pages settings")
+    old_preview = (before.get("deployment_configs") or {}).get("preview") or {}
+    new_preview = (after.get("deployment_configs") or {}).get("preview") or {}
+    for field in ("d1_databases", "env_vars", "r2_buckets", "kv_namespaces"):
+        if old_preview.get(field) != new_preview.get(field):
+            raise SetupError(f"Preview {field} changed unexpectedly; inspect Pages settings")
     old_vars = (before.get("deployment_configs", {}).get("production") or {}).get("env_vars") or {}
     new_vars = (after.get("deployment_configs", {}).get("production") or {}).get("env_vars") or {}
     if not set(old_vars).issubset(new_vars) or not set(variables).issubset(new_vars):
@@ -214,6 +238,12 @@ def apply(client: Cloudflare, before: dict, plan: dict, variables: dict):
     for key in old_vars:
         if (old_vars[key] or {}).get("type") != (new_vars[key] or {}).get("type"):
             raise SetupError("An existing production variable type changed unexpectedly")
+        if key not in variables and (old_vars[key] or {}).get("type") == "plain_text" and old_vars[key] != new_vars[key]:
+            raise SetupError("An existing plaintext production variable changed unexpectedly")
+    old_bindings = (before.get("deployment_configs", {}).get("production") or {}).get("d1_databases") or {}
+    new_bindings = (after.get("deployment_configs", {}).get("production") or {}).get("d1_databases") or {}
+    if any(new_bindings.get(key) != value for key, value in old_bindings.items() if key != "DB"):
+        raise SetupError("An unrelated production D1 binding changed unexpectedly")
     print("Verified Production DB binding and fail-closed setting; Preview DB stayed separate.")
 
     deployment = after.get("canonical_deployment") or {}
@@ -276,6 +306,7 @@ def main():
     if args.mode == "inspect":
         print("Inspection only. No Cloudflare changes were made.")
         return
+    check_expected_plan(plan)
     apply(client, project, plan, variables)
 
 
