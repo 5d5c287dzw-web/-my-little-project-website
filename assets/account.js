@@ -24,7 +24,7 @@ window.addEventListener('load',async()=>{
  const status=document.getElementById('account-status');
  const root=document.getElementById('clerk-root');
  const candidate=new URLSearchParams(location.search).get('next');
- const next=['/admin/','/studio/'].includes(candidate)?candidate:'/';
+ const next=['/admin/','/studio/','/workshop/'].includes(candidate)?candidate:'/';
  try{
   const clerk=await loadClerk();
   if(clerk.isSignedIn){
@@ -32,12 +32,13 @@ window.addEventListener('load',async()=>{
    try{
     const account=await loadAccountStatus(clerk);
     const target=account.assignedRole==='admin'?'/admin/':account.workspace==='creator'?'/studio/':'/';
-    const destination=next==='/'?target:next===target?next:'/';
+    const destination=next==='/'?target:next==='/workshop/'&&account.assignedRole==='admin'?next:next===target?next:'/';
     const continueLink=document.getElementById('continue-link');
     continueLink.href=destination;
-    continueLink.textContent=destination==='/'?'Continue to the shop →':account.adminSecondFactorRequired?'Open Admin security check →':'Continue to your workspace →';
+    continueLink.textContent=destination==='/'?'Continue to the shop →':destination==='/workshop/'?'Continue to My Workshop preview →':account.adminSecondFactorRequired?'Open Admin security check →':'Continue to your workspace →';
     document.getElementById('admin-link').hidden=account.assignedRole!=='admin';
     document.getElementById('studio-link').hidden=account.workspace!=='creator';
+    document.getElementById('workshop-link').hidden=account.assignedRole!=='admin';
     document.getElementById('account-user-id').textContent=account.userId;
     document.getElementById('account-identity').hidden=false;
     document.getElementById('account-links').hidden=false;
