@@ -58,6 +58,7 @@ async function mutate({request,env},update){
   const body=await bodyOf(request), db=env.DB;
   if(body.type==="submit" && !update){
    const project=await editableProject(db,actor.userId,body.id);
+   if(project.status==='changes_requested')throw new AccessError("revision_required",409);
    const resource=await db.prepare("SELECT id FROM creator_resources WHERE project_id=? AND owner_clerk_user_id=? AND kind IN ('guide','bom_note') LIMIT 1").bind(project.id,actor.userId).first();
    if(project.summary.length<20||project.concept.length<50||!resource)throw new AccessError("submission_incomplete",400);
    await db.batch([
@@ -87,7 +88,11 @@ async function mutate({request,env},update){
    const write=update
     ?db.prepare("UPDATE creator_resources SET kind=?,title=?,notes=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_clerk_user_id=? AND project_id=?").bind(v.kind,v.title,v.notes,v.status,resourceId,actor.userId,projectId)
     :db.prepare("INSERT INTO creator_resources(id,project_id,owner_clerk_user_id,kind,title,notes,status) VALUES(?,?,?,?,?,?,?)").bind(resourceId,projectId,actor.userId,v.kind,v.title,v.notes,v.status);
-   await db.batch([write,audit(db,actor.userId,update?"update":"create","creator_resource",resourceId)]);
+   await db.batch([
+    write,
+    db.prepare("UPDATE creator_projects SET status='draft',updated_at=CURRENT_TIMESTAMP WHERE id=? AND owner_clerk_user_id=? AND status='changes_requested'").bind(projectId,actor.userId),
+    audit(db,actor.userId,update?"update":"create","creator_resource",resourceId)
+   ]);
    return staffJson({saved:true,id:resourceId});
   }
   throw new AccessError("unknown_record_type",400);
