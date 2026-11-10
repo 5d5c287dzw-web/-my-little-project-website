@@ -56,6 +56,12 @@ VALUES ('user_VERIFIED_IN_CLERK','creator',1,'trusted_operator');
 - A signed-in owner can open the preview from the Account page or Admin Desk. The old feature-branch preview remains separate and its development progress is not imported into the production Clerk account.
 - Check an anonymous `/workshop/` redirect, a signed-in non-admin 403, owner access and saving a draft stage. Check `/api/shop` still returns no purchasable products. If Pages' custom domain still returns the homepage for `/workshop/`, inspect the deployed `_routes.json` and the active production deployment.
 
+## Product Git and video links
+
+- Admin Desk product records now have optional HTTPS links for a Git repository, documentation in Git (for example, its `docs/` folder or README), and a YouTube video. Save them once on the product. The owner-only `/workshop/products/` library and each product detail page read the same record, and the RC Buggy journey shows its connected links. Flight Radar and every later product use the generic product detail page even before they have a build journey.
+- The private `shop_product_links` table is created idempotently after an authorised Admin Desk or Workshop read. Its reviewed definition is in `database/005_product_links.sql`. The links are omitted from `/api/shop` and do not affect public product visibility, checkout, customer access, creator rights or file downloads.
+- A Git link opens the source site; it does not copy repository content into D1 or grant Git permissions. Private repositories remain subject to their own access controls. A YouTube link opens on YouTube rather than embedding third-party playback on the Workshop page. Treat all links as owner-entered planning references until the linked docs, safety information and licensing have been reviewed for customers.
+
 ## Current boundaries
 
 - Product/category editing, marketing planning, creator draft projects and build-note records are implemented. Public `preview` visibility exposes curated product text, with no buy button or checkout.
