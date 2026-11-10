@@ -9,8 +9,7 @@ function sessionCookie(request){
  return item ? item.slice("__session=".length) : null;
 }
 
-export async function requireStaff(request,env,role,{allowCookie=false}={}){
- if(!env.DB)throw new AccessError("staff_database_unavailable",503);
+async function verifiedUserId(request,env,allowCookie){
  const auth=request.headers.get("Authorization")||"";
  const token=auth.startsWith("Bearer ") ? auth.slice(7) : allowCookie ? sessionCookie(request) : null;
  if(!token)throw new AccessError("authentication_required",401);
@@ -20,8 +19,14 @@ export async function requireStaff(request,env,role,{allowCookie=false}={}){
   const unavailable=["jwks_unavailable","auth_not_configured","invalid_auth_config","invalid_origins"].includes(e.message);
   throw new AccessError(unavailable?"authentication_unavailable":"invalid_session",unavailable?503:401);
  }
+ return claims.sub;
+}
+
+export async function requireStaff(request,env,role,{allowCookie=false}={}){
+ if(!env.DB)throw new AccessError("staff_database_unavailable",503);
+ const userId=await verifiedUserId(request,env,allowCookie);
  let staff;
- try{staff=await env.DB.prepare("SELECT role,enabled FROM staff_access WHERE clerk_user_id=?").bind(claims.sub).first();}
+ try{staff=await env.DB.prepare("SELECT role,enabled FROM staff_access WHERE clerk_user_id=?").bind(userId).first();}
  catch{throw new AccessError("staff_access_not_configured",503);}
  if(!staff||staff.enabled!==1||staff.role!==role)throw new AccessError("access_denied",403);
  if(role==="admin"){
@@ -31,7 +36,19 @@ export async function requireStaff(request,env,role,{allowCookie=false}={}){
    throw new AccessError(unavailable?"admin_verification_unavailable":e.message==="admin_verification_required"?"admin_verification_required":"invalid_admin_verification",unavailable?503:403);
   }
  }
- return {userId:claims.sub,role:staff.role};
+ return {userId,role:staff.role};
+}
+
+// The customer Workshop is an owner-only preview. It never grants Admin Desk
+// access: Admin Desk requests still require their independent Access proof.
+export async function requireWorkshopPreview(request,env,{allowCookie=false}={}){
+ if(!env.DB)throw new AccessError("staff_database_unavailable",503);
+ const userId=await verifiedUserId(request,env,allowCookie);
+ let staff;
+ try{staff=await env.DB.prepare("SELECT role,enabled FROM staff_access WHERE clerk_user_id=?").bind(userId).first();}
+ catch{throw new AccessError("staff_access_not_configured",503);}
+ if(!staff||staff.enabled!==1||staff.role!=="admin")throw new AccessError("access_denied",403);
+ return {userId};
 }
 
 export function requireMutationRequest(request){
