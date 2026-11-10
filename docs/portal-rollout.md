@@ -48,9 +48,17 @@ VALUES ('user_VERIFIED_IN_CLERK','creator',1,'trusted_operator');
 - The Admin Desk now shows catalogue progress toward 30 records, kit-stage and price counts, undecided supplier approaches, product filters, and a downloadable Markdown launch snapshot for weekly reviews. The snapshot distinguishes workspace entries from independent proof and explicitly records that checkout is unavailable. Its recent activity is the latest 20 audit events, not a certified change history since a previous export.
 - Creator Studio now shows a submission checklist. A request for changes requires the creator to edit the project or a build note before resubmitting; the server enforces this transition, even when the UI is bypassed. A distinct creator role/account is still needed for a live creator pilot.
 
+## My Workshop owner preview
+
+- `/workshop/` and every descendant page are served only after a production Clerk session maps to an enabled `admin` row in the production `staff_access` table. Anonymous visitors go to `/account/`; other signed-in accounts receive 403. This owner preview check is separate from the stronger Cloudflare Access proof required for Admin Desk reads and writes. The preview exposes no admin records or privileges.
+- The rebuilt pages include the Workshop overview, Project Garage, 3D Print Library, the RC Buggy project and its five draft stage outlines. They use the current production account. No development Clerk key, customer purchase, entitlement or file access is copied from the old feature branch.
+- `/api/workshop` validates the Clerk session on every request and stores only the owner's demo stage markers in `workshop_preview_progress`. It creates that narrow table idempotently on the first authorised API request; the reviewed definition is in `database/004_workshop_preview.sql`. JSON mutations require the same-origin `Origin` header. Each read and write is scoped to the verified Clerk subject. No customer account or payment migration is implied.
+- A signed-in owner can open the preview from the Account page or Admin Desk. The old feature-branch preview remains separate and its development progress is not imported into the production Clerk account.
+- Check an anonymous `/workshop/` redirect, a signed-in non-admin 403, owner access and saving a draft stage. Check `/api/shop` still returns no purchasable products. If Pages' custom domain still returns the homepage for `/workshop/`, inspect the deployed `_routes.json` and the active production deployment.
+
 ## Current boundaries
 
 - Product/category editing, marketing planning, creator draft projects and build-note records are implemented. Public `preview` visibility exposes curated product text, with no buy button or checkout.
 - Creator approval is internal. It does not publish to a marketplace, transfer rights, calculate royalties or accept files. MailerLite campaigns are planned here, not sent.
-- The original My Workshop demo remains on its feature preview branch until its customer login and database are migrated separately. Do not merge that entire branch into `main` as it contains older public pages and development credentials.
+- The original My Workshop demo remains on its feature preview branch for reference. Do not merge that entire branch into `main` as it contains older public pages, development credentials and overlapping customer schemas. The new main-site Workshop is an owner-only demo, not a live customer portal.
 - Before real orders or private customer data, add payment/webhook provisioning, fulfilment workflows, resource upload scanning and ownership, retention/deletion handling, and a full privacy/security review.
