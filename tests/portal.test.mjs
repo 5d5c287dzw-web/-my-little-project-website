@@ -107,10 +107,31 @@ test('only public preview fields leave the catalogue',async()=>{
  const admin=await token('user_admin');
  const product={type:'product',id:'LP-031',slug:'little-rc-buggy',title:'Little RC Buggy',categoryId:'cat-robotics',summary:'Family buggy build',description:'A solder-free project in development.',kitStage:'prototype',visibility:'preview',pricePence:2999,priceConfirmed:false,supplierStrategy:'drop_ship'};
  assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',admin,product)))).status,200);
+ const linked={...product,repositoryUrl:'https://github.com/example/little-rc-buggy',documentationUrl:'https://github.com/example/little-rc-buggy/tree/main/docs',videoUrl:'https://www.youtube.com/watch?v=example123'};
+ assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',admin,{...linked,videoUrl:'javascript:alert(1)'})))).body.error,'invalid_video_url');
+ assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',admin,{...linked,repositoryUrl:'http://github.com/example/little-rc-buggy'})))).status,400);
+ assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',admin,linked)))).status,200);
+ const privateProduct=(await result(await adminGet(context('/api/admin/workspace','GET',admin)))).body.products.find(p=>p.id==='LP-031');
+ assert.equal(privateProduct.repositoryUrl,linked.repositoryUrl);
+ assert.equal(privateProduct.documentationUrl,linked.documentationUrl);
+ assert.equal(privateProduct.videoUrl,linked.videoUrl);
+ const workshopProduct=(await result(await workshopGet(context('/api/workshop','GET',admin,null,null)))).body.products.find(p=>p.id==='LP-031');
+ assert.equal(workshopProduct.repositoryUrl,linked.repositoryUrl);
+ assert.equal(workshopProduct.documentationUrl,linked.documentationUrl);
+ assert.equal(workshopProduct.videoUrl,linked.videoUrl);
+ assert.equal('supplierStrategy' in workshopProduct,false);
+ assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',admin,product)))).status,200);
+ assert.equal((await result(await workshopGet(context('/api/workshop','GET',admin,null,null)))).body.products.find(p=>p.id==='LP-031').repositoryUrl,linked.repositoryUrl);
+ const newProduct=await result(await adminPost(context('/api/admin/workspace','POST',admin,{...linked,slug:'garden-weather-lab',title:'Garden Weather Lab',visibility:'hidden'})));
+ assert.equal(newProduct.status,200);
+ assert.equal((await result(await workshopGet(context('/api/workshop','GET',admin,null,null)))).body.products.find(p=>p.id===newProduct.body.id).videoUrl,linked.videoUrl);
  publicResult=await result(await shopGet({request:request('/api/shop?slug=little-rc-buggy'),env}));
  assert.equal(publicResult.body.products[0].title,'Little RC Buggy');
  assert.equal(publicResult.body.products[0].pricePence,null);
  assert.equal('supplierStrategy' in publicResult.body.products[0],false);
+ assert.equal('repositoryUrl' in publicResult.body.products[0],false);
+ assert.equal('documentationUrl' in publicResult.body.products[0],false);
+ assert.equal('videoUrl' in publicResult.body.products[0],false);
 });
 
 test('creator records stay within the verified owner and review flow',async()=>{
