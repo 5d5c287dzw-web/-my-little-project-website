@@ -1,4 +1,5 @@
 import {requireStaff,requireMutationRequest,staffJson,staffError,AccessError} from "../staff-auth.js";
+import {ensureProductLinks,productLinks,productLinkColumns} from "../product-links.js";
 
 const enumValue=(value,allowed)=>allowed.includes(value)?value:null;
 const string=(value,max,{required=false}={})=>{
@@ -66,11 +67,20 @@ async function saveRecord(db,actor,body,update){
  const fixedSlugs={"LP-001":"little-flight-radar","LP-031":"little-rc-buggy","LP-036":"build-and-race-twin-pack"};
  if(type==="product"&&fixedSlugs[recordId]&&v.slug!==fixedSlugs[recordId])throw new AccessError("starter_slug_fixed",400);
  if(update){const exists=await db.prepare(`SELECT id FROM ${config.table} WHERE id=?`).bind(recordId).first();if(!exists)throw new AccessError("record_not_found",404);}
+ let links=null;
+ if(type==="product"&&["repositoryUrl","documentationUrl","videoUrl"].some(key=>Object.hasOwn(body,key))){
+  await ensureProductLinks(db);
+  const existing=update?await db.prepare("SELECT repository_url AS repositoryUrl,documentation_url AS documentationUrl,video_url AS videoUrl FROM shop_product_links WHERE product_id=?").bind(recordId).first():null;
+  links=productLinks(body,existing);
+ }
  const fields=config.keys.map(k=>v[k]);
  const write=update
   ?db.prepare(`UPDATE ${config.table} SET ${config.cols.map(c=>c+"=?").join(",")},updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(...fields,recordId)
   :db.prepare(`INSERT INTO ${config.table}(id,${config.cols.join(",")}) VALUES(${Array(config.cols.length+1).fill("?").join(",")})`).bind(recordId,...fields);
- await db.batch([write,audit(db,actor,update?"update":"create",type,recordId)]);
+ const writes=[write];
+ if(links)writes.push(db.prepare("INSERT INTO shop_product_links(product_id,repository_url,documentation_url,video_url) VALUES(?,?,?,?) ON CONFLICT(product_id) DO UPDATE SET repository_url=excluded.repository_url,documentation_url=excluded.documentation_url,video_url=excluded.video_url,updated_at=CURRENT_TIMESTAMP").bind(recordId,links.repositoryUrl,links.documentationUrl,links.videoUrl));
+ writes.push(audit(db,actor,update?"update":"create",type,recordId));
+ await db.batch(writes);
  return {saved:true,type,id:recordId};
 }
 
@@ -91,9 +101,10 @@ async function review(db,actor,body){
 export async function onRequestGet({request,env}){
  try{
   await requireStaff(request,env,"admin");
+  await ensureProductLinks(env.DB);
   const [categories,products,campaigns,submissions,submissionResources,auditEvents]=await Promise.all([
    env.DB.prepare("SELECT id,slug,name,description,sort_order AS sortOrder,active,updated_at AS updatedAt FROM shop_categories ORDER BY sort_order,name LIMIT 200").all(),
-   env.DB.prepare("SELECT id,slug,title,category_id AS categoryId,summary,description,kit_stage AS kitStage,visibility,price_pence AS pricePence,price_confirmed AS priceConfirmed,supplier_strategy AS supplierStrategy,updated_at AS updatedAt FROM shop_products ORDER BY updated_at DESC LIMIT 200").all(),
+   env.DB.prepare(`SELECT p.id,p.slug,p.title,p.category_id AS categoryId,p.summary,p.description,p.kit_stage AS kitStage,p.visibility,p.price_pence AS pricePence,p.price_confirmed AS priceConfirmed,p.supplier_strategy AS supplierStrategy,p.updated_at AS updatedAt,${productLinkColumns} FROM shop_products p LEFT JOIN shop_product_links l ON l.product_id=p.id ORDER BY p.updated_at DESC LIMIT 200`).all(),
    env.DB.prepare("SELECT id,title,channel,status,audience,brief,scheduled_for AS scheduledFor,updated_at AS updatedAt FROM marketing_campaigns ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT id,owner_clerk_user_id AS creatorId,title,summary,concept,status,admin_feedback AS adminFeedback,updated_at AS updatedAt FROM creator_projects WHERE status IN ('submitted','changes_requested','approved_internal') ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT r.project_id AS projectId,r.kind,r.title,r.notes,r.status FROM creator_resources r JOIN creator_projects p ON p.id=r.project_id WHERE p.status IN ('submitted','changes_requested','approved_internal') ORDER BY r.updated_at DESC LIMIT 200").all(),
