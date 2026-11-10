@@ -9,7 +9,7 @@ const node=(tag,className,text)=>{const element=document.createElement(tag);if(c
 const label=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 const date=value=>value?new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
 const slugify=value=>value.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
-const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_input:'Check the form fields and try again.'};
+const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_input:'Check the form fields and try again.'};
 function notice(message,error=false){const box=$('notice');box.textContent=message;box.classList.toggle('error',error);box.hidden=false;box.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function errorMessage(error){return messages[error.message]||'The change could not be saved. Please try again.';}
 
@@ -40,12 +40,13 @@ async function api(method='GET',body){
 }
 
 const viewTitles={overview:'Overview',products:'Products',categories:'Categories',marketing:'Marketing',review:'Creator review',activity:'Activity',projects:'My projects',resources:'Guides & files',submissions:'Review status'};
+const greeting=()=>{const hour=new Date().getHours();return hour<12?'Good morning, maker':hour<17?'Good afternoon, maker':'Good evening, maker';};
 function showView(name){
  if(!$('view-'+name))return;
  document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!=='view-'+name);
  document.querySelectorAll('[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===name));
  $('breadcrumb-view').textContent=viewTitles[name];
- const headings={overview:portalKind==='admin'?['Good evening, maker','The practical work of getting My Little Project ready for launch.']:['Make something worth sharing','Develop an idea, gather its build notes and send it for a thoughtful review.'],products:['Products','Shape the catalogue, one product at a time.'],categories:['Categories','Give every build a place to belong.'],marketing:['Marketing plans','Plan the launch story.'],review:['Creator review','Thoughtful decisions for new ideas.'],activity:['Activity','Recent changes across the workspaces.'],projects:['My projects','A home for your next idea.'],resources:['Guides & file plans','Bring the build experience into focus.'],submissions:['Review status','See where your projects stand.']};
+ const headings={overview:portalKind==='admin'?[greeting(),'The practical work of getting My Little Project ready for launch.']:['Make something worth sharing','Develop an idea, gather its build notes and send it for a thoughtful review.'],products:['Products','Shape the catalogue, one product at a time.'],categories:['Categories','Give every build a place to belong.'],marketing:['Marketing plans','Plan the launch story.'],review:['Creator review','Thoughtful decisions for new ideas.'],activity:['Activity','Recent changes across the workspaces.'],projects:['My projects','A home for your next idea.'],resources:['Guides & file plans','Bring the build experience into focus.'],submissions:['Review status','See where your projects stand.']};
  $('page-title').textContent=headings[name][0]+'.';$('page-subtitle').textContent=headings[name][1];
  history.replaceState(null,'','#'+name);
 }
@@ -86,16 +87,78 @@ function openAdminForm(type,record){
  form.elements.namedItem('id').value=id;
  form.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
+const catalogueStats=products=>({
+ total:products.length,
+ ready:products.filter(p=>p.kitStage==='ready').length,
+ core:products.filter(p=>p.priceConfirmed===1&&p.pricePence!==null&&p.pricePence<4000).length,
+ premium:products.filter(p=>p.priceConfirmed===1&&p.pricePence!==null&&p.pricePence>=4000).length,
+ supplierOpen:products.filter(p=>p.supplierStrategy==='undecided').length,
+ priceOpen:products.filter(p=>p.priceConfirmed!==1).length
+});
+function productNextAction(products){
+ const starters=products.filter(p=>['LP-001','LP-031'].includes(p.id));
+ const unfinished=starters.find(p=>p.kitStage!=='ready'||p.priceConfirmed!==1||p.supplierStrategy==='undecided');
+ if(unfinished)return `Next: confirm the build guide, parts, safety and price for ${unfinished.title}; update its stage, price and supplier decision here.`;
+ if(products.length<30)return `Next: research and record ${30-products.length} more catalogue ideas, keeping affordable solder-free family builds at the centre.`;
+ return 'Next: settle checkout, payment and fulfilment decisions before opening orders.';
+}
+function renderProductList(){
+ const products=$('products-list');products.replaceChildren();
+ const query=$('product-search').value.trim().toLowerCase();
+ const stage=$('product-stage-filter').value,supplier=$('product-supplier-filter').value;
+ const visible=data.products.filter(p=>(!query||[p.title,p.slug,p.id,p.summary].some(x=>String(x||'').toLowerCase().includes(query)))&&(!stage||p.kitStage===stage)&&(!supplier||p.supplierStrategy===supplier));
+ $('product-results').textContent=`Showing ${visible.length} of ${data.products.length} product records`;
+ if(!visible.length)return empty(products,data.products.length?'No products match those filters.':'No product records yet. Add the first concept.');
+ visible.forEach(p=>products.append(row(p.title,`${p.id} · ${p.slug} · ${p.visibility==='preview'?'Public preview':'Internal only'} · ${p.priceConfirmed===1&&p.pricePence!==null?'£'+(p.pricePence/100).toFixed(2):'Price unconfirmed'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
+}
+function downloadLaunchSnapshot(){
+ const stats=catalogueStats(data.products);
+ const list=(items,make)=>items.length?items.map(make).join('\n'):'- None recorded';
+ const lines=[
+  '# My Little Project — launch snapshot',
+  `Generated: ${new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}`,
+  '',
+  '## Catalogue',
+  `- ${stats.total}/30 product records; ${stats.ready} marked kit-stage ready.`,
+  `- ${stats.core} confirmed prices below £40; ${stats.premium} confirmed higher-price options.`,
+  `- ${stats.priceOpen} prices unconfirmed; ${stats.supplierOpen} supplier approaches undecided.`,
+  '',
+  '## Incomplete product decisions',
+  list(data.products.filter(p=>p.priceConfirmed!==1||p.supplierStrategy==='undecided'||p.kitStage!=='ready'),p=>`- ${p.title}: ${[p.kitStage!=='ready'?'kit stage '+p.kitStage:null,p.priceConfirmed!==1?'price unconfirmed':null,p.supplierStrategy==='undecided'?'supplier undecided':null].filter(Boolean).join('; ')}.`),
+  '',
+  '## Recent recorded changes',
+  list(data.audit,a=>`- ${date(a.createdAt)}: ${label(a.action)} ${label(a.targetType)} (${a.targetId}).`),
+  '',
+  '## Evidence and assumptions',
+  '- Evidence: the product, category, campaign and activity counts above come from the private production workspace.',
+  '- Recorded stages and prices are operator entries; they are not independent proof of a finished BOM, safety assessment or supplier agreement.',
+  '- MailerLite form is present on the public site. Checkout and payments are not connected.',
+  '',
+  '## Highest-priority next action',
+  productNextAction(data.products),
+  '',
+  '## Other open launch work',
+  '- Confirm checkout, payment provider, shipping, returns and drop-ship terms before taking orders.',
+  '- Creator approvals are internal; marketplace rights, fees, royalties and customer portal are not live.'
+ ];
+ const blob=new Blob([lines.join('\n')+'\n'],{type:'text/markdown;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='my-little-project-launch-snapshot-'+new Date().toISOString().slice(0,10)+'.md';
+ document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function renderAdmin(){
  $('metric-products').textContent=data.products.length;
  $('metric-categories').textContent=data.categories.filter(x=>x.active).length;
  $('metric-campaigns').textContent=data.campaigns.length;
  const waiting=data.submissions.filter(x=>x.status==='submitted').length;
  $('metric-review').textContent=waiting;$('review-count').textContent=waiting;
+ const stats=catalogueStats(data.products);
+ $('metric-ready').textContent=stats.ready;$('metric-core').textContent=stats.core;
+ $('metric-supplier-open').textContent=stats.supplierOpen;$('metric-price-open').textContent=stats.priceOpen;
+ const progress=$('catalogue-progress');progress.value=Math.min(stats.total,30);
+ $('catalogue-progress-label').textContent=`${stats.total} of 30 catalogue records`;
+ $('catalogue-next').textContent=productNextAction(data.products);
  activity($('activity-list'),data.audit);activity($('overview-activity'),data.audit.slice(0,4));
- const products=$('products-list');products.replaceChildren();
- if(!data.products.length)empty(products,'No product records yet. Add the first concept.');
- data.products.forEach(p=>products.append(row(p.title,`${p.id} · ${p.slug} · ${p.visibility==='preview'?'Public preview':'Internal only'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
+ renderProductList();
  const cats=$('categories-list');cats.replaceChildren();if(!data.categories.length)empty(cats,'No categories yet.');
  data.categories.forEach(c=>cats.append(row(c.name,`${c.slug} · order ${c.sortOrder}`,c.active?'Active':'Inactive',()=>openAdminForm('category',c),'▦')));
  const campaigns=$('campaigns-list');campaigns.replaceChildren();if(!data.campaigns.length)empty(campaigns,'No plans yet. Start with a launch email idea.');
@@ -126,6 +189,8 @@ function renderAdminSubmissions(){
  });
 }
 function bindAdminForms(){
+ for(const id of ['product-search','product-stage-filter','product-supplier-filter'])$(id).addEventListener(id==='product-search'?'input':'change',renderProductList);
+ $('download-launch-snapshot').addEventListener('click',downloadLaunchSnapshot);
  for(const type of ['product','category','campaign']){
   $('new-'+type).addEventListener('click',()=>openAdminForm(type,null));
   const form=$(type+'-form');form.addEventListener('submit',async event=>{
@@ -160,13 +225,22 @@ function openCreatorForm(type,record){
  }
  form.elements.namedItem('id').value=id;form.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
+function creatorRequirements(project){return [
+ ['Summary of at least 20 characters',(project.summary||'').length>=20],
+ ['Build concept of at least 50 characters',(project.concept||'').length>=50],
+ ['Guide or parts-list note',data.resources.some(r=>r.projectId===project.id&&['guide','bom_note'].includes(r.kind))]
+];}
 function creatorCard(project){
  const card=node('article','submission-card');card.append(node('span','eyebrow',`UPDATED ${date(project.updatedAt)}`),node('h3','',project.title),node('span','pill',label(project.status)),node('p','',project.summary||'Add a short summary to help the team understand the idea.'));
  if(project.adminFeedback)card.append(node('p','feedback','Feedback: '+project.adminFeedback));
+ const requirements=creatorRequirements(project),checks=node('ul','submission-checklist');
+ requirements.forEach(([title,done])=>{const item=node('li',done?'done':'needed',`${done?'✓':'○'} ${title}`);checks.append(item);});card.append(checks);
  const actions=node('div','actions');
  if(editable(project)){
   const edit=node('button','button secondary','Edit draft');edit.type='button';edit.addEventListener('click',()=>{showView('projects');openCreatorForm('project',project);});actions.append(edit);
-  const submit=node('button','button primary','Submit for review →');submit.type='button';submit.addEventListener('click',async()=>{submit.disabled=true;try{await api('POST',{type:'submit',id:project.id});await refresh();notice(`${project.title} sent for review.`);}catch(e){notice(errorMessage(e),true);}finally{submit.disabled=false;}});actions.append(submit);
+  const submit=node('button','button primary','Submit for review →');submit.type='button';submit.disabled=project.status!=='draft'||!requirements.every(([,done])=>done);submit.addEventListener('click',async()=>{submit.disabled=true;try{await api('POST',{type:'submit',id:project.id});await refresh();notice(`${project.title} sent for review.`);}catch(e){notice(errorMessage(e),true);}finally{submit.disabled=false;}});actions.append(submit);
+  if(project.status==='changes_requested')actions.append(node('p','form-hint','Update this project or one of its build notes before resubmitting.'));
+  else if(submit.disabled)actions.append(node('p','form-hint','Complete the checklist before submitting. Add build notes in Guides & files.'));
  }else actions.append(node('span','form-hint',project.status==='submitted'?'Under review; editing is paused.':'Internal approval recorded; further steps are agreed separately.'));
  card.append(actions);return card;
 }
@@ -205,7 +279,7 @@ window.addEventListener('load',async()=>{
   if(!clerk.isSignedIn){gateMessage.textContent='Sign in to continue. Access to this workspace also needs approval.';return;}
   await refresh();bindNavigation();if(portalKind==='admin')bindAdminForms();else bindCreatorForms();
   gate.hidden=true;root.hidden=false;
-  const requested=location.hash.slice(1);if($('view-'+requested))showView(requested);
+  const requested=location.hash.slice(1);showView($('view-'+requested)?requested:'overview');
  }catch(error){
   gateMessage.textContent=error.message==='sign_in_not_configured'?'Sign-in is being configured for this site.':errorMessage(error);
  }
