@@ -131,7 +131,13 @@ test('creator records stay within the verified owner and review flow',async()=>{
  assert.equal(reviewed.body.status,'changes_requested');
  const own=await result(await creatorGet(context('/api/creator/workspace','GET',creatorA)));
  assert.match(own.body.projects[0].adminFeedback,/sensor mounting/);
+ assert.equal((await result(await creatorPost(context('/api/creator/workspace','POST',creatorA,{type:'submit',id:projectId})))).status,409);
+ assert.equal((await result(await creatorPatch(context('/api/creator/workspace','PATCH',creatorA,{type:'resource',id:note.body.id,projectId,kind:'guide',title:'Build guide outline',notes:'Added sensor mounting steps',status:'draft'})))).status,200);
+ assert.equal((await result(await creatorGet(context('/api/creator/workspace','GET',creatorA)))).body.projects[0].status,'draft');
+ assert.equal((await result(await creatorPost(context('/api/creator/workspace','POST',creatorA,{type:'submit',id:projectId})))).body.status,'submitted');
+ assert.equal((await result(await adminPost(context('/api/admin/workspace','POST',admin,{type:'review',id:projectId,decision:'changes_requested',feedback:'Please explain the weatherproofing.'})))).status,200);
  assert.equal((await result(await creatorPatch(context('/api/creator/workspace','PATCH',creatorA,{...idea,id:projectId})))).status,200);
+ assert.equal((await result(await creatorGet(context('/api/creator/workspace','GET',creatorA)))).body.projects[0].status,'draft');
 });
 
 test('page middleware blocks anonymous and wrong-role visitors',async()=>{

@@ -42,6 +42,12 @@ INSERT INTO staff_access(clerk_user_id,role,enabled,granted_by)
 VALUES ('user_VERIFIED_IN_CLERK','creator',1,'trusted_operator');
 ```
 
+## Live owner verification and workspace update on 10 November 2026
+
+- The owner's screenshot shows `/admin/` rendering the protected Admin Desk with three product records, three active categories, no campaign plans and no creator submissions. This confirms that the production Clerk session, Cloudflare Access gate and D1 role now allow the owner through. The prior 9 November setup notes above record the earlier state; do not run that setup again merely to grant the owner access.
+- The Admin Desk now shows catalogue progress toward 30 records, kit-stage and price counts, undecided supplier approaches, product filters, and a downloadable Markdown launch snapshot for weekly reviews. The snapshot distinguishes workspace entries from independent proof and explicitly records that checkout is unavailable. Its recent activity is the latest 20 audit events, not a certified change history since a previous export.
+- Creator Studio now shows a submission checklist. A request for changes requires the creator to edit the project or a build note before resubmitting; the server enforces this transition, even when the UI is bypassed. A distinct creator role/account is still needed for a live creator pilot.
+
 ## Current boundaries
 
 - Product/category editing, marketing planning, creator draft projects and build-note records are implemented. Public `preview` visibility exposes curated product text, with no buy button or checkout.
