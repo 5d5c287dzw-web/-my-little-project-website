@@ -1,4 +1,5 @@
 import {requireWorkshopPreview,requireMutationRequest,staffJson,staffError,AccessError} from "./staff-auth.js";
+import {ensureProductLinks,productLinkColumns} from "./product-links.js";
 
 const projectId="LP-031",stageCount=5;
 const table="CREATE TABLE IF NOT EXISTS workshop_preview_progress (clerk_user_id TEXT NOT NULL, project_id TEXT NOT NULL CHECK(project_id = 'LP-031'), completed_stages TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(clerk_user_id, project_id))";
@@ -8,6 +9,7 @@ async function prepared(request,env){
  // This tiny idempotent preview table can be provisioned by the first verified
  // owner request; no broad customer/purchase schema is installed in production.
  await env.DB.prepare(table).run();
+ await ensureProductLinks(env.DB);
  return actor;
 }
 async function ownProgress(db,userId){
@@ -28,8 +30,11 @@ async function bodyOf(request){
 export async function onRequestGet({request,env}){
  try{
   const actor=await prepared(request,env);
-  const project=await ownProgress(env.DB,actor.userId);
-  return staffJson({projects:project?[project]:[],demoOnly:true});
+  const [project,products]=await Promise.all([
+   ownProgress(env.DB,actor.userId),
+   env.DB.prepare(`SELECT p.id,p.slug,p.title,p.summary,p.description,p.kit_stage AS kitStage,p.visibility,c.name AS categoryName,${productLinkColumns} FROM shop_products p LEFT JOIN shop_categories c ON c.id=p.category_id LEFT JOIN shop_product_links l ON l.product_id=p.id ORDER BY p.title LIMIT 200`).all()
+  ]);
+  return staffJson({projects:project?[project]:[],products:products.results,demoOnly:true});
  }catch(error){return staffError(error);}
 }
 export async function onRequestPost({request,env}){

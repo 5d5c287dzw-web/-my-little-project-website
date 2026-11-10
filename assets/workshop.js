@@ -1,7 +1,10 @@
 const projectId='LP-031';
 let project=null;
+let products=[];
 const status=document.getElementById('save-status');
 const message=(text,error=false)=>{status.textContent=text;status.classList.toggle('error',error);};
+const node=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;};
+const safeUrl=value=>{try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password?url.href:null;}catch{return null;}};
 
 async function workshopApi(method='GET',body){
  const response=await fetch('/api/workshop',{method,credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -24,9 +27,52 @@ function render(){
   button.closest('.stage-row')?.classList.toggle('reviewed',done);
  });
 }
+function renderResources(container,product){
+ container.replaceChildren();
+ for(const [field,label,description] of [
+  ['repositoryUrl','Git repository','Source, design files and project history'],
+  ['documentationUrl','Docs in Git','Build notes and project documentation'],
+  ['videoUrl','YouTube video','Watch the project video']
+ ]){
+  const url=safeUrl(product?.[field]);
+  const item=node(url?'a':'div',url?'resource-link':'resource-link missing');
+  item.append(node('strong','',label+(url?' ↗':'')),node('span','',url?description:'Not linked yet in Admin Desk'));
+  if(url){item.href=url;item.target='_blank';item.rel='noopener noreferrer';item.referrerPolicy='no-referrer';}
+  container.append(item);
+ }
+}
+function renderProducts(){
+ document.querySelectorAll('[data-product-links]').forEach(container=>renderResources(container,products.find(p=>p.id===container.dataset.productLinks)));
+ const library=document.getElementById('workshop-products-list');
+ if(library){
+  library.replaceChildren();
+  if(!products.length)library.append(node('p','','No product records have been added in Admin Desk yet.'));
+  products.forEach(product=>{
+   const card=node('article','product-library-card');
+   card.append(node('span','pill',`${product.id} · ${product.kitStage} · ${product.visibility==='preview'?'PUBLIC PREVIEW':'INTERNAL'}`),node('h3','',product.title),node('p','',product.summary||'Description to be added.'));
+   const count=['repositoryUrl','documentationUrl','videoUrl'].filter(key=>Boolean(product[key])).length;
+   card.append(node('small','',`${count} of 3 resource links added`));
+   const link=node('a','text-link','Open product resources →');link.href='/workshop/products/view/?id='+encodeURIComponent(product.id);card.append(link);library.append(card);
+  });
+ }
+ const detail=document.getElementById('product-title');
+ if(detail){
+  const id=new URLSearchParams(location.search).get('id');
+  const selected=products.find(p=>p.id===id);
+  if(!selected){detail.textContent='Product not found';message('Choose a product from Products & docs.',true);return;}
+  document.getElementById('product-id').textContent=selected.id+' · '+(selected.categoryName||'UNCATEGORISED');
+  detail.textContent=selected.title;
+  document.getElementById('product-summary').textContent=selected.summary||'Short description to be added.';
+  document.getElementById('product-notes').textContent=selected.description||'Project notes to be added in Admin Desk.';
+  document.getElementById('product-stage').textContent='Kit stage: '+selected.kitStage+' · '+(selected.visibility==='preview'?'Public coming-soon preview':'Internal concept');
+  renderResources(document.getElementById('product-resource-links'),selected);
+ }
+}
 async function refresh(){
- const result=await workshopApi();project=result.projects.find(x=>x.projectId===projectId)||null;render();
- message(project?'Private demo progress is saved to your production account.':'The RC Buggy demo is ready to add to your private Workshop.');
+ const result=await workshopApi();project=result.projects.find(x=>x.projectId===projectId)||null;products=result.products||[];render();renderProducts();
+ if(document.body.dataset.workshopView==='products'){
+  if(document.getElementById('product-title')?.textContent!=='Product not found')message('Resource links are maintained once per product in Admin Desk.');
+ }else message(project?'Private demo progress is saved to your production account.':'The RC Buggy demo is ready to add to your private Workshop.');
 }
 document.querySelectorAll('.start-demo').forEach(button=>button.addEventListener('click',async()=>{
  button.disabled=true;

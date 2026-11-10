@@ -9,7 +9,7 @@ const node=(tag,className,text)=>{const element=document.createElement(tag);if(c
 const label=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 const date=value=>value?new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
 const slugify=value=>value.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
-const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_input:'Check the form fields and try again.'};
+const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_repository_url:'Enter an HTTPS Git repository URL without credentials.',invalid_documentation_url:'Enter an HTTPS link to the product documentation.',invalid_video_url:'Enter a YouTube HTTPS video URL.',invalid_input:'Check the form fields and try again.'};
 function notice(message,error=false){const box=$('notice');box.textContent=message;box.classList.toggle('error',error);box.hidden=false;box.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function errorMessage(error){return messages[error.message]||'The change could not be saved. Please try again.';}
 
@@ -82,6 +82,7 @@ function openAdminForm(type,record){
   fillCategories(form.elements.namedItem('categoryId'),record?.categoryId);
   setForm(form,record?{...record,pricePounds:record.pricePence===null?'':(record.pricePence/100).toFixed(2),priceConfirmed:record.priceConfirmed===1}:{kitStage:'concept',visibility:'hidden',supplierStrategy:'undecided',priceConfirmed:false});
   form.elements.namedItem('slug').readOnly=Boolean(record&&['LP-001','LP-031','LP-036'].includes(record.id));
+  const workshopLink=$('product-workshop-link');workshopLink.hidden=!id;workshopLink.href=id?'/workshop/products/view/?id='+encodeURIComponent(id):'/workshop/products/';
  }else if(type==='category')setForm(form,record?{...record,active:record.active===1}:{sortOrder:0,active:true});
  else setForm(form,record||{channel:'email',status:'idea'});
  form.elements.namedItem('id').value=id;
@@ -109,7 +110,7 @@ function renderProductList(){
  const visible=data.products.filter(p=>(!query||[p.title,p.slug,p.id,p.summary].some(x=>String(x||'').toLowerCase().includes(query)))&&(!stage||p.kitStage===stage)&&(!supplier||p.supplierStrategy===supplier));
  $('product-results').textContent=`Showing ${visible.length} of ${data.products.length} product records`;
  if(!visible.length)return empty(products,data.products.length?'No products match those filters.':'No product records yet. Add the first concept.');
- visible.forEach(p=>products.append(row(p.title,`${p.id} · ${p.slug} · ${p.visibility==='preview'?'Public preview':'Internal only'} · ${p.priceConfirmed===1&&p.pricePence!==null?'£'+(p.pricePence/100).toFixed(2):'Price unconfirmed'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
+ visible.forEach(p=>products.append(row(p.title,`${p.id} · ${p.slug} · ${p.visibility==='preview'?'Public preview':'Internal only'} · ${p.priceConfirmed===1&&p.pricePence!==null?'£'+(p.pricePence/100).toFixed(2):'Price unconfirmed'} · ${p.repositoryUrl?'Git linked':'Git not linked'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
 }
 function downloadLaunchSnapshot(){
  const stats=catalogueStats(data.products);
@@ -122,6 +123,7 @@ function downloadLaunchSnapshot(){
   `- ${stats.total}/30 product records; ${stats.ready} marked kit-stage ready.`,
   `- ${stats.core} confirmed prices below £40; ${stats.premium} confirmed higher-price options.`,
   `- ${stats.priceOpen} prices unconfirmed; ${stats.supplierOpen} supplier approaches undecided.`,
+  `- ${data.products.filter(p=>p.repositoryUrl).length} Git repositories, ${data.products.filter(p=>p.documentationUrl).length} docs links and ${data.products.filter(p=>p.videoUrl).length} YouTube links recorded.`,
   '',
   '## Incomplete product decisions',
   list(data.products.filter(p=>p.priceConfirmed!==1||p.supplierStrategy==='undecided'||p.kitStage!=='ready'),p=>`- ${p.title}: ${[p.kitStage!=='ready'?'kit stage '+p.kitStage:null,p.priceConfirmed!==1?'price unconfirmed':null,p.supplierStrategy==='undecided'?'supplier undecided':null].filter(Boolean).join('; ')}.`),
@@ -199,7 +201,7 @@ function bindAdminForms(){
    if(type==='product'){
     const price=formValue(form,'pricePounds');const amount=price===''?null:Number(price);
     if(amount!==null&&!Number.isFinite(amount))return notice('Enter a valid price.',true);
-    Object.assign(payload,{title:formValue(form,'title'),slug:formValue(form,'slug'),categoryId:formValue(form,'categoryId')||null,summary:formValue(form,'summary'),description:formValue(form,'description'),kitStage:formValue(form,'kitStage'),visibility:formValue(form,'visibility'),pricePence:amount===null?null:Math.round(amount*100),priceConfirmed:form.elements.namedItem('priceConfirmed').checked,supplierStrategy:formValue(form,'supplierStrategy')});
+    Object.assign(payload,{title:formValue(form,'title'),slug:formValue(form,'slug'),categoryId:formValue(form,'categoryId')||null,summary:formValue(form,'summary'),description:formValue(form,'description'),kitStage:formValue(form,'kitStage'),visibility:formValue(form,'visibility'),pricePence:amount===null?null:Math.round(amount*100),priceConfirmed:form.elements.namedItem('priceConfirmed').checked,supplierStrategy:formValue(form,'supplierStrategy'),repositoryUrl:formValue(form,'repositoryUrl'),documentationUrl:formValue(form,'documentationUrl'),videoUrl:formValue(form,'videoUrl')});
    }else if(type==='category')Object.assign(payload,{name:formValue(form,'name'),slug:formValue(form,'slug'),description:formValue(form,'description'),sortOrder:Number(formValue(form,'sortOrder')),active:form.elements.namedItem('active').checked});
    else Object.assign(payload,{title:formValue(form,'title'),channel:formValue(form,'channel'),status:formValue(form,'status'),audience:formValue(form,'audience'),brief:formValue(form,'brief'),scheduledFor:formValue(form,'scheduledFor')||null});
    const button=form.querySelector('[type=submit]');button.disabled=true;
