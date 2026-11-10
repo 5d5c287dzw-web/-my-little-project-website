@@ -35,8 +35,15 @@ function renderResources(container,product){
   ['videoUrl','YouTube video','Watch the project video']
  ]){
   const url=safeUrl(product?.[field]);
-  const item=node(url?'a':'div',url?'resource-link':'resource-link missing');
-  item.append(node('strong','',label+(url?' ↗':'')),node('span','',url?description:'Not linked yet in Admin Desk'));
+  const gitLink=field!=='videoUrl';
+  const githubLink=Boolean(url&&gitLink&&['github.com','www.github.com'].includes(new URL(url).hostname.toLowerCase()));
+  const item=node(url?'a':'div',url?'resource-link'+(githubLink?' github':''):'resource-link missing');
+  const heading=node('div','resource-heading');
+  if(githubLink){
+   const mark=document.createElement('img');mark.src='/assets/github-mark.svg';mark.width=16;mark.height=16;mark.alt='';mark.setAttribute('aria-hidden','true');heading.append(mark);
+  }else if(url&&gitLink){const symbol=node('span','git-symbol','⎇');symbol.setAttribute('aria-hidden','true');heading.append(symbol);}
+  heading.append(node('strong','',label+(url?' ↗':'')));
+  item.append(heading,node('span','',url?description+(githubLink?' · GitHub':''):'Not linked yet in Admin Desk'));
   if(url){item.href=url;item.target='_blank';item.rel='noopener noreferrer';item.referrerPolicy='no-referrer';}
   container.append(item);
  }
