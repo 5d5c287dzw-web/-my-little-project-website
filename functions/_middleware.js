@@ -1,20 +1,21 @@
-import {requireStaff,AccessError} from "./api/staff-auth.js";
+import {requireStaff,requireWorkshopPreview,AccessError} from "./api/staff-auth.js";
 
 // Root middleware runs before static files. _routes.json restricts its invocation
 // to the private page paths and API paths, leaving the public shop static.
 export async function onRequest({request,env,next}){
  const path=new URL(request.url).pathname;
- const role=path==="/admin"||path.startsWith("/admin/")?"admin":path==="/studio"||path.startsWith("/studio/")?"creator":null;
+ const role=path==="/admin"||path.startsWith("/admin/")?"admin":path==="/studio"||path.startsWith("/studio/")?"creator":path==="/workshop"||path.startsWith("/workshop/")?"workshop":null;
  if(!role)return next();
  try{
-  await requireStaff(request,env,role,{allowCookie:true});
+  if(role==="workshop")await requireWorkshopPreview(request,env,{allowCookie:true});
+  else await requireStaff(request,env,role,{allowCookie:true});
   const response=await next();
   const headers=new Headers(response.headers);
   headers.set("Cache-Control","private, no-store");headers.set("X-Robots-Tag","noindex, nofollow");headers.set("Vary","Cookie");
   return new Response(response.body,{status:response.status,headers});
  }catch(error){
   if(error instanceof AccessError && error.status===401){
-   const nextPath=role==="admin"?"%2Fadmin%2F":"%2Fstudio%2F";
+   const nextPath=role==="admin"?"%2Fadmin%2F":role==="creator"?"%2Fstudio%2F":"%2Fworkshop%2F";
    return Response.redirect(new URL("/account/?next="+nextPath,request.url),302);
   }
   const status=error instanceof AccessError?error.status:503;
