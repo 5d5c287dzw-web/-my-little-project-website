@@ -14,7 +14,7 @@ The `feature/my-workshop-phase-1-20261101` branch still contains an unfinished c
 
 ## Private workspaces
 
-`/admin/` and `/studio/` are now implemented as role-gated development workspaces. Their APIs use Cloudflare D1 and verified Clerk sessions. The public shop still works if those services are not configured; the private routes fail closed. See `docs/portal-rollout.md` for the separate production setup and `database/003_portal_workspace.sql` migration.
+`/admin/` and `/studio/` are now implemented as role-gated development workspaces. Their APIs use Cloudflare D1 and verified Clerk sessions. The Admin Desk has a private bill of materials for each product, with sourcing evidence and a calculated, explicitly partial parts subtotal. The public shop still works if those services are not configured; the private routes fail closed. See `docs/portal-rollout.md` for production setup and the numbered `database/` migrations.
 
 The manual GitHub Actions workflow `Configure My Little Project portal` can inspect and configure the Production D1 binding with a scoped Cloudflare API token stored as a repository secret. It does not grant admin access or enable checkout.
 

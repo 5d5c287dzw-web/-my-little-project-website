@@ -9,6 +9,7 @@ import {onRequestGet as authConfigGet} from '../functions/api/auth-config.js';
 import {onRequestGet as accountStatusGet} from '../functions/api/account-status.js';
 import {onRequestGet as workshopGet,onRequestPost as workshopPost,onRequestPatch as workshopPatch} from '../functions/api/workshop.js';
 import {onRequestGet as launchGet,onRequestPatch as launchPatch} from '../functions/api/admin/launch-readiness.js';
+import {onRequestPost as bomPost,onRequestPatch as bomPatch,onRequestDelete as bomDelete} from '../functions/api/admin/bom.js';
 import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
@@ -133,6 +134,35 @@ test('only public preview fields leave the catalogue',async()=>{
  assert.equal('repositoryUrl' in publicResult.body.products[0],false);
  assert.equal('documentationUrl' in publicResult.body.products[0],false);
  assert.equal('videoUrl' in publicResult.body.products[0],false);
+});
+
+test('private product BOM keeps sourced prices, availability and audit history out of public and customer views',async()=>{
+ const owner=await token('user_admin'),creator=await token('user_creator_a');
+ assert.equal((await result(await bomPost(context('/api/admin/bom','POST',creator,{productId:'LP-001',starter:true})))).status,403);
+ assert.equal((await result(await bomPost(context('/api/admin/bom','POST',owner,{productId:'LP-001',starter:true},null)))).status,403);
+ assert.equal((await result(await bomPost(context('/api/admin/bom','POST',owner,{productId:'LP-001',starter:true})))).status,200);
+ const initial=(await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body;
+ const seeded=initial.bomItems.filter(x=>x.productId==='LP-001');
+ assert.equal(seeded.length,6);
+ assert.ok(seeded.every(x=>x.buyPricePence===null&&x.sourcingStatus==='research'));
+ const part={productId:'LP-001',partName:'Hook-up lead set',manufacturer:'Example',manufacturerPartNumber:'LEAD-10',supplierName:'RS',supplierPartNumber:'123-456',supplierUrl:'https://uk.rs-online.com/example',kitRole:'core',quantityPerKit:3,packQuantity:10,buyPricePence:499,priceEvidence:'listing',evidenceNote:'Exact ten-pack with matching female ends',checkedAt:new Date().toISOString().slice(0,10),availability:'in_stock',leadTimeDays:2,sourcingStatus:'candidate',productRevision:'A',notes:'Confirm pinout during assembly',sortOrder:65};
+ assert.equal((await result(await bomPost(context('/api/admin/bom','POST',owner,{...part,supplierUrl:'http://example.test'})))).body.error,'invalid_supplier_url');
+ assert.equal((await result(await bomPost(context('/api/admin/bom','POST',owner,{...part,checkedAt:''})))).body.error,'price_source_required');
+ const created=await result(await bomPost(context('/api/admin/bom','POST',owner,part)));
+ assert.equal(created.status,200);
+ const edited=await result(await bomPatch(context('/api/admin/bom','PATCH',owner,{...part,id:created.body.id,buyPricePence:450,sourcingStatus:'tested'})));
+ assert.equal(edited.status,200);
+ const privateData=(await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body;
+ const saved=privateData.bomItems.find(x=>x.id===created.body.id);
+ assert.equal(saved.buyPricePence,450);assert.equal(saved.packQuantity,10);assert.equal(saved.quantityPerKit,3);assert.equal(saved.sourcingStatus,'tested');
+ assert.ok(privateData.audit.some(x=>x.targetId==='LP-001:'+created.body.id));
+ const publicData=(await result(await shopGet({request:request('/api/shop?slug=little-flight-radar'),env}))).body;
+ const customerData=(await result(await workshopGet(context('/api/workshop','GET',owner,null,null)))).body;
+ assert.equal('bomItems' in publicData,false);assert.equal('bomItems' in customerData,false);
+ assert.ok(publicData.products.every(x=>!('buyPricePence' in x)));
+ assert.equal('buyPricePence' in customerData.products.find(x=>x.id==='LP-001'),false);
+ assert.equal((await result(await bomDelete(context('/api/admin/bom','DELETE',owner,{productId:'LP-001',id:created.body.id})))).status,200);
+ assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body.bomItems.some(x=>x.id===created.body.id),false);
 });
 
 test('creator records stay within the verified owner and review flow',async()=>{

@@ -3,6 +3,7 @@ const root=document.getElementById('portal');
 const gate=document.getElementById('access-state');
 const gateMessage=document.getElementById('access-message');
 let data={};
+let selectedProductId='';
 
 const $=id=>document.getElementById(id);
 const node=(tag,className,text)=>{const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=text;return element;};
@@ -10,7 +11,7 @@ const label=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.to
 const date=value=>value?new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
 const timestamp=value=>new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z');
 const slugify=value=>value.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
-const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_repository_url:'Enter an HTTPS Git repository URL without credentials.',invalid_documentation_url:'Enter an HTTPS link to the product documentation.',invalid_video_url:'Enter a YouTube HTTPS video URL.',invalid_evidence_url:'Use an HTTPS evidence link without credentials.',evidence_required:'Add a specific evidence note of at least 20 characters before marking this check verified.',checkout_not_connected:'A test order cannot be verified until test-mode checkout and order handling exist.',invalid_input:'Check the form fields and try again.'};
+const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_repository_url:'Enter an HTTPS Git repository URL without credentials.',invalid_documentation_url:'Enter an HTTPS link to the product documentation.',invalid_video_url:'Enter a YouTube HTTPS video URL.',invalid_evidence_url:'Use an HTTPS evidence link without credentials.',invalid_supplier_url:'Enter an HTTPS supplier URL without credentials.',invalid_checked_date:'Enter a valid date that is not in the future.',price_source_required:'A sourced price needs a supplier, check date and supplier link or specific source note.',record_not_found:'This part or product could not be found. Refresh and try again.',evidence_required:'Add a specific evidence note of at least 20 characters before marking this check verified.',checkout_not_connected:'A test order cannot be verified until test-mode checkout and order handling exist.',invalid_input:'Check the form fields and try again.'};
 function notice(message,error=false){const box=$('notice');box.textContent=message;box.classList.toggle('error',error);box.hidden=false;box.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function errorMessage(error){return messages[error.message]||'The change could not be saved. Please try again.';}
 
@@ -47,6 +48,14 @@ async function readinessApi(method='GET',body){
  if(!response.ok)throw Error(payload.error||'temporarily_unavailable');
  return payload;
 }
+async function bomApi(method,body){
+ const token=await window.Clerk.session?.getToken();
+ if(!token)throw Error('invalid_session');
+ const response=await fetch('/api/admin/bom',{method,headers:{Authorization:'Bearer '+token,Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+ const payload=await response.json().catch(()=>({error:'temporarily_unavailable'}));
+ if(!response.ok)throw Error(payload.error||'temporarily_unavailable');
+ return payload;
+}
 
 const viewTitles={overview:'Overview',flight:'Flight Radar',products:'Products',categories:'Categories',marketing:'Marketing',review:'Creator review',activity:'Activity',projects:'My projects',resources:'Guides & files',submissions:'Review status'};
 const greeting=()=>{const hour=new Date().getHours();return hour<12?'Good morning, maker':hour<17?'Good afternoon, maker':'Good evening, maker';};
@@ -62,7 +71,10 @@ function showView(name){
 function bindNavigation(){
  document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.view)));
  document.querySelectorAll('[data-jump]').forEach(button=>button.addEventListener('click',()=>showView(button.dataset.jump)));
- document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$(button.dataset.close).hidden=true));
+ document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>{
+  $(button.dataset.close).hidden=true;
+  if(button.dataset.close==='product-form'){$('product-edit-stack').hidden=true;selectedProductId='';}
+ }));
 }
 function empty(container,message){container.replaceChildren(node('div','empty',message));}
 function row(title,subtitle,status,action,symbol='◇'){
@@ -92,13 +104,62 @@ function openAdminForm(type,record){
  const id=record?.id||'';
  $(type+'-form-title').textContent=id?'Edit '+type:'New '+type;
  if(type==='product'){
+  selectedProductId=id;
+  $('product-edit-stack').hidden=false;
+  $('bom-form').hidden=true;
+  $('product-bom-panel').hidden=!id;
   fillCategories(form.elements.namedItem('categoryId'),record?.categoryId);
   setForm(form,record?{...record,pricePounds:record.pricePence===null?'':(record.pricePence/100).toFixed(2),priceConfirmed:record.priceConfirmed===1}:{kitStage:'concept',visibility:'hidden',supplierStrategy:'undecided',priceConfirmed:false});
   form.elements.namedItem('slug').readOnly=Boolean(record&&['LP-001','LP-031','LP-036'].includes(record.id));
   const workshopLink=$('product-workshop-link');workshopLink.hidden=!id;workshopLink.href=id?'/workshop/products/view/?id='+encodeURIComponent(id):'/workshop/products/';
+  if(id)renderBom(id);
  }else if(type==='category')setForm(form,record?{...record,active:record.active===1}:{sortOrder:0,active:true});
  else setForm(form,record||{channel:'email',status:'idea'});
  form.elements.namedItem('id').value=id;
+ form.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+const money=pence=>'£'+(pence/100).toFixed(2);
+function productBom(productId){return (data.bomItems||[]).filter(item=>item.productId===productId);}
+function bomCost(items){
+ const core=items.filter(item=>item.kitRole==='core');
+ const sourced=core.filter(item=>item.buyPricePence!==null&&item.priceEvidence!=='estimate');
+ return {core,sourced,missing:core.filter(item=>!sourced.includes(item)),subtotal:sourced.reduce((sum,item)=>sum+Math.ceil(item.buyPricePence*item.quantityPerKit/item.packQuantity),0)};
+}
+function bomSummary(items){
+ if(!items.length)return 'No parts recorded yet. Add the parts needed to build one kit.';
+ const cost=bomCost(items);
+ const pending=cost.core.filter(item=>item.sourcingStatus!=='approved').length;
+ const unavailable=cost.core.filter(item=>!['in_stock','low_stock'].includes(item.availability)).length;
+ return `${cost.sourced.length}/${cost.core.length} core parts with sourced prices · known parts subtotal ${money(cost.subtotal)} per kit · ${cost.missing.length} unpriced or estimated · ${pending} not approved · ${unavailable} without confirmed stock.`;
+}
+function renderBom(productId){
+ const items=productBom(productId),summary=$('bom-summary'),list=$('bom-list');
+ summary.textContent=bomSummary(items);
+ list.replaceChildren();
+ if(!items.length)empty(list,'No parts yet. Add a part or load the Flight Radar starter requirements.');
+ items.forEach(item=>{
+  const card=node('article','bom-item');
+  const head=node('div','bom-item-head');head.append(node('strong','',item.partName),node('span','pill '+(item.sourcingStatus==='approved'?'':'amber'),label(item.sourcingStatus)));
+  const details=node('p','',`${label(item.kitRole)} · ${item.quantityPerKit} per kit · ${item.packQuantity} per pack · ${item.buyPricePence===null?'No buy price':`${money(item.buyPricePence)} per pack (${label(item.priceEvidence)})`}`);
+  const supplier=node('p','',`${item.supplierName||'Supplier needed'}${item.supplierPartNumber?' · SKU '+item.supplierPartNumber:''}${item.manufacturerPartNumber?' · MPN '+item.manufacturerPartNumber:''}`);
+  const stock=node('p','',`${label(item.availability)} · ${item.checkedAt?'checked '+item.checkedAt:'date needed'}${item.leadTimeDays===null?'':' · '+item.leadTimeDays+' days lead'}${item.productRevision?' · '+item.productRevision:''}`);
+  card.append(head,details,supplier,stock);
+  if(item.supplierUrl){const link=node('a','bom-source','View supplier listing ↗');link.href=item.supplierUrl;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
+  if(item.notes)card.append(node('p','bom-notes',item.notes));
+  const edit=node('button','quiet-link','Edit part →');edit.type='button';edit.addEventListener('click',()=>openBomForm(item));card.append(edit);
+  list.append(card);
+ });
+ $('seed-flight-bom').hidden=productId!=='LP-001'||['esp32-s3-zero','round-gc9a01','ky-040','jumpers','usb-c','case'].every(key=>items.some(item=>item.id==='lp001-'+key));
+ $('flight-bom-summary').textContent=bomSummary(productBom('LP-001'));
+}
+function openBomForm(item=null){
+ if(!selectedProductId)return;
+ const form=$('bom-form');form.reset();form.hidden=false;
+ setForm(form,item?{...item,buyPricePounds:item.buyPricePence===null?'':(item.buyPricePence/100).toFixed(2)}:{productId:selectedProductId,kitRole:'core',quantityPerKit:1,packQuantity:1,priceEvidence:'estimate',availability:'unknown',sourcingStatus:'research',sortOrder:0});
+ form.elements.namedItem('id').value=item?.id||'';
+ form.elements.namedItem('productId').value=selectedProductId;
+ $('bom-form-title').textContent=item?'Edit part':'Add part';
+ $('delete-bom-item').hidden=!item;
  form.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 const catalogueStats=products=>({
@@ -125,6 +186,7 @@ function renderFlight(){
  $('flight-next').textContent=first?`Highest-priority next action: ${first.nextAction||first.action}`:'All checks marked verified. Review the evidence and the full test order before considering launch.';
  $('overview-flight-count').textContent=`${verified} / ${checks.length} checks verified`;
  $('overview-flight-next').textContent=first?first.nextAction||first.action:'Review evidence and test the complete order flow.';
+ $('flight-bom-summary').textContent=bomSummary(productBom('LP-001'));
  const container=$('flight-checks');container.replaceChildren();
  checks.forEach(check=>{
   const card=node('form','flight-check');card.dataset.checkKey=check.checkKey;
@@ -156,11 +218,13 @@ function renderProductList(){
  const visible=data.products.filter(p=>(!query||[p.title,p.slug,p.id,p.summary].some(x=>String(x||'').toLowerCase().includes(query)))&&(!stage||p.kitStage===stage)&&(!supplier||p.supplierStrategy===supplier));
  $('product-results').textContent=`Showing ${visible.length} of ${data.products.length} product records`;
  if(!visible.length)return empty(products,data.products.length?'No products match those filters.':'No product records yet. Add the first concept.');
- visible.forEach(p=>products.append(row(p.title,`${p.id} · ${p.slug} · ${p.visibility==='preview'?'Public preview':'Internal only'} · ${p.priceConfirmed===1&&p.pricePence!==null?'£'+(p.pricePence/100).toFixed(2):'Price unconfirmed'} · ${p.repositoryUrl?'Git linked':'Git not linked'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
+ visible.forEach(p=>products.append(row(p.title,`${p.id} · ${productBom(p.id).length} BOM parts · ${p.visibility==='preview'?'Public preview':'Internal only'} · ${p.priceConfirmed===1&&p.pricePence!==null?'£'+(p.pricePence/100).toFixed(2):'Price unconfirmed'} · ${p.repositoryUrl?'Git linked':'Git not linked'}`,p.kitStage,()=>openAdminForm('product',p),'✳')));
 }
 function downloadLaunchSnapshot(){
  const stats=catalogueStats(data.products);
  const list=(items,make)=>items.length?items.map(make).join('\n'):'- None recorded';
+ const oneLine=value=>String(value||'').replace(/\s+/g,' ').trim();
+ const radarItems=productBom('LP-001'),radarCost=bomCost(radarItems);
  const since=$('snapshot-since').value;
  const recent=since?data.audit.filter(x=>timestamp(x.createdAt)>=new Date(since+'T00:00:00')):data.audit;
  const flight=data.launch.checks;
@@ -175,6 +239,10 @@ function downloadLaunchSnapshot(){
   `- Product stage: ${data.products.find(x=>x.id==='LP-001')?.kitStage||'not recorded'}; price: ${data.products.find(x=>x.id==='LP-001')?.priceConfirmed===1?'confirmed in product record':'unconfirmed'}; supplier: ${data.products.find(x=>x.id==='LP-001')?.supplierStrategy||'unrecorded'}.`,
   '- Live checkout and customer entitlements are disabled.',
   '',
+  '### Private bill of materials and sourcing',
+  `- ${radarCost.sourced.length}/${radarCost.core.length} core parts have sourced prices. Known allocated parts subtotal: ${money(radarCost.subtotal)} inc VAT. ${radarCost.missing.length} core parts are unpriced or estimated. This is a partial cost, excluding delivery, packaging, assembly, fees and returns.`,
+  list(radarItems,x=>`- ${oneLine(x.partName)} [${x.kitRole}]: ${x.quantityPerKit} per kit, ${x.packQuantity} per pack; ${x.buyPricePence===null?'buy price unknown':money(x.buyPricePence)+' per pack ('+x.priceEvidence+')'}; ${oneLine(x.supplierName)||'supplier needed'}${x.supplierPartNumber?' SKU '+oneLine(x.supplierPartNumber):''}${x.manufacturerPartNumber?' MPN '+oneLine(x.manufacturerPartNumber):''}; ${x.availability}; ${x.sourcingStatus}; checked ${x.checkedAt||'never'}${x.supplierUrl?' · '+x.supplierUrl:''}${x.evidenceNote?' · evidence: '+oneLine(x.evidenceNote):''}.`),
+  '',
   '### Incomplete Flight Radar milestones and decisions',
   list(open,x=>`- ${x.title}: ${label(x.status)}. Next: ${x.nextAction||x.action}${x.decisionNote?' Decision: '+x.decisionNote:''}`),
   '',
@@ -187,6 +255,7 @@ function downloadLaunchSnapshot(){
   `- ${stats.core} confirmed prices below £40; ${stats.premium} confirmed higher-price options.`,
   `- ${stats.priceOpen} prices unconfirmed; ${stats.supplierOpen} supplier approaches undecided.`,
   `- ${data.products.filter(p=>p.repositoryUrl).length} Git repositories, ${data.products.filter(p=>p.documentationUrl).length} docs links and ${data.products.filter(p=>p.videoUrl).length} YouTube links recorded.`,
+  `- ${data.bomItems.length} private BOM rows across ${new Set(data.bomItems.map(x=>x.productId)).size} products.`,
   '',
   '## Incomplete product decisions',
   list(data.products.filter(p=>p.priceConfirmed!==1||p.supplierStrategy==='undecided'||p.kitStage!=='ready'),p=>`- ${p.title}: ${[p.kitStage!=='ready'?'kit stage '+p.kitStage:null,p.priceConfirmed!==1?'price unconfirmed':null,p.supplierStrategy==='undecided'?'supplier undecided':null].filter(Boolean).join('; ')}.`),
@@ -225,6 +294,7 @@ function renderAdmin(){
  $('catalogue-next').textContent=productNextAction(data.products);
  activity($('activity-list'),data.audit);activity($('overview-activity'),data.audit.slice(0,4));
  renderProductList();
+ if(selectedProductId&&data.products.some(p=>p.id===selectedProductId))renderBom(selectedProductId);
  const cats=$('categories-list');cats.replaceChildren();if(!data.categories.length)empty(cats,'No categories yet.');
  data.categories.forEach(c=>cats.append(row(c.name,`${c.slug} · order ${c.sortOrder}`,c.active?'Active':'Inactive',()=>openAdminForm('category',c),'▦')));
  const campaigns=$('campaigns-list');campaigns.replaceChildren();if(!data.campaigns.length)empty(campaigns,'No plans yet. Start with a launch email idea.');
@@ -258,6 +328,35 @@ function bindAdminForms(){
  $('snapshot-since').value=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
  for(const id of ['product-search','product-stage-filter','product-supplier-filter'])$(id).addEventListener(id==='product-search'?'input':'change',renderProductList);
  $('download-launch-snapshot').addEventListener('click',downloadLaunchSnapshot);
+ $('flight-open-bom').addEventListener('click',()=>{
+  const product=data.products.find(p=>p.id==='LP-001');
+  if(!product)return notice('Flight Radar product record is not available yet.',true);
+  showView('products');openAdminForm('product',product);$('product-bom-panel').scrollIntoView({block:'start',behavior:'smooth'});
+ });
+ $('new-bom-item').addEventListener('click',()=>openBomForm());
+ $('seed-flight-bom').addEventListener('click',async event=>{
+  event.currentTarget.disabled=true;
+  try{await bomApi('POST',{productId:'LP-001',starter:true});await refresh();notice('Flight Radar starter requirements added without prices. Check the exact variants and source every part.');}
+  catch(error){notice(errorMessage(error),true);}finally{event.currentTarget.disabled=false;}
+ });
+ const bomForm=$('bom-form');
+ bomForm.addEventListener('submit',async event=>{
+  event.preventDefault();if(!bomForm.reportValidity())return;
+  const pounds=formValue(bomForm,'buyPricePounds');
+  const price=pounds===''?null:Number(pounds);
+  if(price!==null&&(!Number.isFinite(price)||price<0))return notice('Enter a valid buy price.',true);
+  const payload={id:formValue(bomForm,'id'),productId:formValue(bomForm,'productId'),partName:formValue(bomForm,'partName'),manufacturer:formValue(bomForm,'manufacturer'),manufacturerPartNumber:formValue(bomForm,'manufacturerPartNumber'),supplierName:formValue(bomForm,'supplierName'),supplierPartNumber:formValue(bomForm,'supplierPartNumber'),supplierUrl:formValue(bomForm,'supplierUrl'),kitRole:formValue(bomForm,'kitRole'),quantityPerKit:Number(formValue(bomForm,'quantityPerKit')),packQuantity:Number(formValue(bomForm,'packQuantity')),buyPricePence:price===null?null:Math.round(price*100),priceEvidence:formValue(bomForm,'priceEvidence'),evidenceNote:formValue(bomForm,'evidenceNote'),checkedAt:formValue(bomForm,'checkedAt'),availability:formValue(bomForm,'availability'),leadTimeDays:formValue(bomForm,'leadTimeDays')===''?null:Number(formValue(bomForm,'leadTimeDays')),sourcingStatus:formValue(bomForm,'sourcingStatus'),productRevision:formValue(bomForm,'productRevision'),notes:formValue(bomForm,'notes'),sortOrder:Number(formValue(bomForm,'sortOrder'))};
+  const button=bomForm.querySelector('[type=submit]');button.disabled=true;
+  try{await bomApi(payload.id?'PATCH':'POST',payload);bomForm.hidden=true;await refresh();notice('Part and sourcing evidence saved. The product subtotal has been recalculated.');}
+  catch(error){notice(errorMessage(error),true);}finally{button.disabled=false;}
+ });
+ $('delete-bom-item').addEventListener('click',async event=>{
+  const id=formValue(bomForm,'id'),productId=formValue(bomForm,'productId');
+  if(!id||!window.confirm('Delete this part from the bill of materials?'))return;
+  event.currentTarget.disabled=true;
+  try{await bomApi('DELETE',{id,productId});bomForm.hidden=true;await refresh();notice('Part removed from the BOM.');}
+  catch(error){notice(errorMessage(error),true);}finally{event.currentTarget.disabled=false;}
+ });
  for(const type of ['product','category','campaign']){
   $('new-'+type).addEventListener('click',()=>openAdminForm(type,null));
   const form=$(type+'-form');form.addEventListener('submit',async event=>{
@@ -270,7 +369,15 @@ function bindAdminForms(){
    }else if(type==='category')Object.assign(payload,{name:formValue(form,'name'),slug:formValue(form,'slug'),description:formValue(form,'description'),sortOrder:Number(formValue(form,'sortOrder')),active:form.elements.namedItem('active').checked});
    else Object.assign(payload,{title:formValue(form,'title'),channel:formValue(form,'channel'),status:formValue(form,'status'),audience:formValue(form,'audience'),brief:formValue(form,'brief'),scheduledFor:formValue(form,'scheduledFor')||null});
    const button=form.querySelector('[type=submit]');button.disabled=true;
-   try{await api(id?'PATCH':'POST',payload);form.hidden=true;await refresh();notice(`${label(type)} saved.`);}catch(e){notice(errorMessage(e),true);}finally{button.disabled=false;}
+   try{
+    const saved=await api(id?'PATCH':'POST',payload);
+    form.hidden=true;await refresh();
+    if(type==='product'){
+     const product=data.products.find(p=>p.id===(id||saved.id));
+     if(product)openAdminForm('product',product);
+    }
+    notice(`${label(type)} saved.`);
+   }catch(e){notice(errorMessage(e),true);}finally{button.disabled=false;}
   });
   const nameField=form.elements.namedItem(type==='category'?'name':'title');const slugField=form.elements.namedItem('slug');
   if(slugField)nameField.addEventListener('input',()=>{if(!formValue(form,'id')&&!slugField.dataset.manual)slugField.value=slugify(nameField.value);});
