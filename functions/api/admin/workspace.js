@@ -1,6 +1,7 @@
 import {requireStaff,requireMutationRequest,staffJson,staffError,AccessError} from "../staff-auth.js";
 import {ensureProductLinks,productLinks,productLinkColumns} from "../product-links.js";
 import {ensureProductBom,bomSelect} from "../product-bom.js";
+import {ensureShopMedia,mediaSelect} from "../shop-media.js";
 
 const enumValue=(value,allowed)=>allowed.includes(value)?value:null;
 const string=(value,max,{required=false}={})=>{
@@ -104,16 +105,18 @@ export async function onRequestGet({request,env}){
   await requireStaff(request,env,"admin");
   await ensureProductLinks(env.DB);
   await ensureProductBom(env.DB);
-  const [categories,products,bomItems,campaigns,submissions,submissionResources,auditEvents]=await Promise.all([
+  await ensureShopMedia(env.DB);
+  const [categories,products,bomItems,media,campaigns,submissions,submissionResources,auditEvents]=await Promise.all([
    env.DB.prepare("SELECT id,slug,name,description,sort_order AS sortOrder,active,updated_at AS updatedAt FROM shop_categories ORDER BY sort_order,name LIMIT 200").all(),
    env.DB.prepare(`SELECT p.id,p.slug,p.title,p.category_id AS categoryId,p.summary,p.description,p.kit_stage AS kitStage,p.visibility,p.price_pence AS pricePence,p.price_confirmed AS priceConfirmed,p.supplier_strategy AS supplierStrategy,p.updated_at AS updatedAt,${productLinkColumns} FROM shop_products p LEFT JOIN shop_product_links l ON l.product_id=p.id ORDER BY p.updated_at DESC LIMIT 200`).all(),
    env.DB.prepare(`SELECT ${bomSelect} FROM shop_product_bom_items ORDER BY product_id,sort_order,part_name LIMIT 5000`).all(),
+   env.DB.prepare(`SELECT ${mediaSelect} FROM shop_media ORDER BY product_id,target_type,target_id LIMIT 5200`).all(),
    env.DB.prepare("SELECT id,title,channel,status,audience,brief,scheduled_for AS scheduledFor,updated_at AS updatedAt FROM marketing_campaigns ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT id,owner_clerk_user_id AS creatorId,title,summary,concept,status,admin_feedback AS adminFeedback,updated_at AS updatedAt FROM creator_projects WHERE status IN ('submitted','changes_requested','approved_internal') ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT r.project_id AS projectId,r.kind,r.title,r.notes,r.status FROM creator_resources r JOIN creator_projects p ON p.id=r.project_id WHERE p.status IN ('submitted','changes_requested','approved_internal') ORDER BY r.updated_at DESC LIMIT 200").all(),
    env.DB.prepare("SELECT action,target_type AS targetType,target_id AS targetId,created_at AS createdAt FROM staff_audit_events ORDER BY created_at DESC LIMIT 100").all()
   ]);
-  return staffJson({categories:categories.results,products:products.results,bomItems:bomItems.results,campaigns:campaigns.results,submissions:submissions.results,submissionResources:submissionResources.results,audit:auditEvents.results,liveOrders:false});
+  return staffJson({categories:categories.results,products:products.results,bomItems:bomItems.results,media:media.results,campaigns:campaigns.results,submissions:submissions.results,submissionResources:submissionResources.results,audit:auditEvents.results,liveOrders:false});
  }catch(error){return staffError(error);}
 }
 

@@ -1,5 +1,6 @@
 import {requireStaff,requireMutationRequest,staffJson,staffError,AccessError} from '../staff-auth.js';
 import {ensureProductBom} from '../product-bom.js';
+import {ensureShopMedia} from '../shop-media.js';
 
 const text=(value,max,required=false)=>{
  if(typeof value!=='string')throw new AccessError('invalid_input',400);
@@ -94,7 +95,8 @@ async function mutate({request,env},method){
    if(!exists)throw new AccessError('record_not_found',404);
   }
   if(method==='DELETE'){
-   await env.DB.batch([env.DB.prepare('DELETE FROM shop_product_bom_items WHERE id=? AND product_id=?').bind(itemId,productId),audit(env.DB,actor.userId,'delete',itemId,productId)]);
+   await ensureShopMedia(env.DB);
+   await env.DB.batch([env.DB.prepare("DELETE FROM shop_media WHERE target_type='bom' AND target_id=?").bind(itemId),env.DB.prepare('DELETE FROM shop_product_bom_items WHERE id=? AND product_id=?').bind(itemId,productId),audit(env.DB,actor.userId,'delete',itemId,productId)]);
   }else{
    const input=values(body),fields=keys.map(key=>input[key]);
    const write=method==='POST'

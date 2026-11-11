@@ -11,5 +11,12 @@
   document.getElementById('category').textContent=product.category||'Build something brilliant.';
   document.getElementById('description').textContent=product.description||product.summary||'This idea is taking shape.';
   document.getElementById('stage').textContent=product.kitStage==='concept'?'Concept in development':'Prototype in development';
+  if(product.photoUrl){
+   const visual=document.querySelector('.preview-visual'),art=visual.querySelector('.product-visual-art');
+   const image=document.createElement('img');image.src=product.photoUrl;image.alt=product.photoAlt;
+   art.replaceChildren(image);visual.classList.add('has-photo');
+   visual.querySelector('.product-visual-top span').textContent='CURRENT PRODUCT / FIRST LOOK';
+   visual.querySelector('.product-visual-caption span').textContent=product.photoCaption||'Photo of the current kit';
+  }
  }catch{document.getElementById('description').textContent='This project preview is unavailable right now. Explore our other projects or check back soon.';}
 })();
