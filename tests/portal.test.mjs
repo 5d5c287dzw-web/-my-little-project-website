@@ -8,6 +8,7 @@ import {onRequestGet as shopGet} from '../functions/api/shop.js';
 import {onRequestGet as authConfigGet} from '../functions/api/auth-config.js';
 import {onRequestGet as accountStatusGet} from '../functions/api/account-status.js';
 import {onRequestGet as workshopGet,onRequestPost as workshopPost,onRequestPatch as workshopPatch} from '../functions/api/workshop.js';
+import {onRequestGet as launchGet,onRequestPatch as launchPatch} from '../functions/api/admin/launch-readiness.js';
 import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
@@ -162,13 +163,38 @@ test('creator records stay within the verified owner and review flow',async()=>{
  assert.equal((await result(await creatorGet(context('/api/creator/workspace','GET',creatorA)))).body.projects[0].status,'draft');
 });
 
+test('Flight Radar checks need admin access and evidence before verification',async()=>{
+ const owner=await token('user_admin');
+ assert.equal((await result(await launchGet(context('/api/admin/launch-readiness','GET')))).status,401);
+ assert.equal((await result(await launchGet(context('/api/admin/launch-readiness','GET',await token('user_creator_a'))))).status,403);
+ assert.equal((await result(await launchGet(context('/api/admin/launch-readiness','GET',owner,null,null)))).status,403);
+ const initial=await result(await launchGet(context('/api/admin/launch-readiness','GET',owner)));
+ assert.equal(initial.body.checks.length,9);
+ assert.ok(initial.body.checks.every(x=>x.status==='missing'));
+ const item={productId:'LP-001',checkKey:'bom',status:'verified',evidenceNote:'A tested parts list with exact revisions and costs.'};
+ assert.equal((await result(await launchPatch(context('/api/admin/launch-readiness','PATCH',owner,{...item,evidenceNote:''})))).body.error,'evidence_required');
+ assert.equal((await result(await launchPatch(context('/api/admin/launch-readiness','PATCH',owner,{...item,evidenceUrl:'http://example.test/bom'})))).body.error,'invalid_evidence_url');
+ assert.equal((await result(await launchPatch(context('/api/admin/launch-readiness','PATCH',owner,{...item,checkKey:'unknown'})))).status,400);
+ assert.equal((await result(await launchPatch(context('/api/admin/launch-readiness','PATCH',owner,{...item,checkKey:'checkout'})))).body.error,'checkout_not_connected');
+ assert.equal((await result(await launchPatch(context('/api/admin/launch-readiness','PATCH',owner,{...item,evidenceUrl:'https://example.test/bom',nextAction:'Repeat with a second kit.'})))).status,200);
+ const after=await result(await launchGet(context('/api/admin/launch-readiness','GET',owner)));
+ assert.equal(after.body.checks[0].status,'verified');
+ assert.equal(after.body.checks[0].evidenceUrl,'https://example.test/bom');
+ assert.ok((await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body.audit.some(x=>x.targetId==='LP-001:bom'));
+ const publicProduct=(await result(await shopGet({request:request('/api/shop?slug=little-flight-radar'),env}))).body.products[0];
+ assert.equal(publicProduct?.evidenceNote,undefined);
+});
+
 test('Workshop preview saves only the signed-in owner’s demo stage markers',async()=>{
  assert.equal((await result(await workshopGet(context('/api/workshop','GET')))).status,401);
  assert.equal((await result(await workshopGet(context('/api/workshop','GET',await token('user_creator_a'))))).status,403);
  const owner=await token('user_admin'),otherOwner=await token('user_admin_b');
  assert.deepEqual((await result(await workshopGet({request:request('/api/workshop','GET',owner,null,true,null),env}))).body.projects,[]);
  assert.deepEqual((await result(await workshopGet(context('/api/workshop','GET',owner,null,null)))).body.projects,[]);
- assert.equal((await result(await workshopPost(context('/api/workshop','POST',owner,{projectId:'LP-001'},null)))).status,400);
+ assert.equal((await result(await workshopPost(context('/api/workshop','POST',owner,{projectId:'LP-999'},null)))).status,400);
+ const radar=await result(await workshopPost(context('/api/workshop','POST',owner,{projectId:'LP-001'},null)));
+ assert.equal(radar.status,200);assert.deepEqual(radar.body.project.completedStages,[]);
+ assert.deepEqual((await result(await workshopPatch(context('/api/workshop','PATCH',owner,{projectId:'LP-001',stage:2,completed:true},null)))).body.project.completedStages,[2]);
  const started=await result(await workshopPost({request:request('/api/workshop','POST',owner,{projectId:'LP-031'},true,null),env}));
  assert.equal(started.status,200);assert.deepEqual(started.body.project.completedStages,[]);
  assert.equal((await result(await workshopPatch(context('/api/workshop','PATCH',owner,{projectId:'LP-031',stage:6,completed:true},null)))).status,400);
@@ -178,7 +204,9 @@ test('Workshop preview saves only the signed-in owner’s demo stage markers',as
  assert.equal((await result(await workshopPatch({request:crossOrigin,env}))).status,401);
  const noOrigin=new Request(origin+'/api/workshop',{method:'PATCH',headers:{Cookie:'__session='+owner,'Content-Type':'application/json'},body:JSON.stringify({projectId:'LP-031',stage:2,completed:true})});
  assert.equal((await result(await workshopPatch({request:noOrigin,env}))).body.error,'origin_not_allowed');
- assert.deepEqual((await result(await workshopGet({request:request('/api/workshop','GET',owner,null,true,null),env}))).body.projects[0].completedStages,[1]);
+ const ownProjects=(await result(await workshopGet({request:request('/api/workshop','GET',owner,null,true,null),env}))).body.projects;
+ assert.deepEqual(ownProjects.find(x=>x.projectId==='LP-031').completedStages,[1]);
+ assert.deepEqual(ownProjects.find(x=>x.projectId==='LP-001').completedStages,[2]);
  assert.deepEqual((await result(await workshopGet(context('/api/workshop','GET',otherOwner,null,null)))).body.projects,[]);
  assert.equal((await result(await workshopPatch(context('/api/workshop','PATCH',otherOwner,{projectId:'LP-031',stage:1,completed:true},null)))).status,404);
  assert.equal((await result(await workshopPatch(context('/api/workshop','PATCH',owner,{projectId:'LP-031',stage:1,completed:false},null)))).body.project.completedStages.length,0);

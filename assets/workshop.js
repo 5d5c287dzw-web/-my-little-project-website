@@ -1,5 +1,7 @@
-const projectId='LP-031';
+const projectId=document.body.dataset.projectId||'LP-001';
+const projectName=projectId==='LP-031'?'RC Buggy':'Flight Radar';
 let project=null;
+let projects=[];
 let products=[];
 const status=document.getElementById('save-status');
 const message=(text,error=false)=>{status.textContent=text;status.classList.toggle('error',error);};
@@ -19,7 +21,16 @@ function render(){
  document.querySelectorAll('[data-count]').forEach(el=>el.textContent=count+' of 5 draft stages reviewed');
  document.querySelectorAll('[data-progress-bar]').forEach(el=>{el.value=count;el.textContent=count+' of 5';});
  document.querySelectorAll('[data-start-panel]').forEach(el=>el.hidden=Boolean(project));
- document.querySelectorAll('[data-project-card]').forEach(el=>el.hidden=!project);
+ document.querySelectorAll('[data-project-card]').forEach(el=>{
+  const saved=projects.find(x=>x.projectId===(el.dataset.projectCard||projectId));
+  el.hidden=!saved;
+  if(saved){
+   const total=saved.completedStages.length,share=Math.round(total/5*100);
+   el.querySelectorAll('[data-progress]').forEach(x=>x.textContent=share+'%');
+   el.querySelectorAll('[data-count]').forEach(x=>x.textContent=total+' of 5 draft stages reviewed');
+   el.querySelectorAll('[data-progress-bar]').forEach(x=>{x.value=total;x.textContent=total+' of 5';});
+  }
+ });
  document.querySelectorAll('[data-empty-project]').forEach(el=>el.hidden=Boolean(project));
  document.querySelectorAll('.stage-toggle').forEach(button=>{
   const done=reviewed.includes(Number(button.dataset.stage));button.disabled=!project;
@@ -73,24 +84,29 @@ function renderProducts(){
   document.getElementById('product-notes').textContent=selected.description||'Project notes to be added in Admin Desk.';
   document.getElementById('product-stage').textContent='Kit stage: '+selected.kitStage+' · '+(selected.visibility==='preview'?'Public coming-soon preview':'Internal concept');
   renderResources(document.getElementById('product-resource-links'),selected);
+  const journey=document.getElementById('product-journey');
+  if(journey){
+   journey.hidden=!['LP-001','LP-031'].includes(selected.id);
+   if(!journey.hidden){journey.href=selected.id==='LP-001'?'/workshop/projects/lp-001/':'/workshop/projects/lp-031/';journey.textContent=`Open ${selected.title} draft journey →`;}
+  }
  }
 }
 async function refresh(){
- const result=await workshopApi();project=result.projects.find(x=>x.projectId===projectId)||null;products=result.products||[];render();renderProducts();
+ const result=await workshopApi();projects=result.projects||[];project=projects.find(x=>x.projectId===projectId)||null;products=result.products||[];render();renderProducts();
  if(document.body.dataset.workshopView==='products'){
   if(document.getElementById('product-title')?.textContent!=='Product not found')message('Resource links are maintained once per product in Admin Desk.');
- }else message(project?'Private demo progress is saved to your production account.':'The RC Buggy demo is ready to add to your private Workshop.');
+ }else message(project?'Private demo progress is saved to your production account.':`The ${projectName} demo is ready to add to your private Workshop.`);
 }
 document.querySelectorAll('.start-demo').forEach(button=>button.addEventListener('click',async()=>{
  button.disabled=true;
- try{const result=await workshopApi('POST',{projectId});project=result.project;render();message('RC Buggy demo added to your private Workshop.');}
+ try{const result=await workshopApi('POST',{projectId});project=result.project;projects=[...projects.filter(x=>x.projectId!==projectId),project];render();message(`${projectName} demo added to your private Workshop.`);}
  catch{message('Could not add the demo project. Please try again.',true);}
  finally{button.disabled=false;}
 }));
 document.querySelectorAll('.stage-toggle').forEach(button=>button.addEventListener('click',async()=>{
  if(!project)return;
  button.disabled=true;const stage=Number(button.dataset.stage),completed=!project.completedStages.includes(stage);
- try{const result=await workshopApi('PATCH',{projectId,stage,completed});project=result.project;render();message('Draft stage review saved.');}
+ try{const result=await workshopApi('PATCH',{projectId,stage,completed});project=result.project;projects=[...projects.filter(x=>x.projectId!==projectId),project];render();message('Draft stage review saved.');}
  catch(error){if(error.message==='progress_changed_elsewhere')await refresh().catch(()=>{});message('That stage was not saved. Please retry.',true);}
  finally{button.disabled=!project;}
 }));
