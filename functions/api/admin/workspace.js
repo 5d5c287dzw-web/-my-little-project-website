@@ -108,7 +108,7 @@ export async function onRequestGet({request,env}){
    env.DB.prepare("SELECT id,title,channel,status,audience,brief,scheduled_for AS scheduledFor,updated_at AS updatedAt FROM marketing_campaigns ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT id,owner_clerk_user_id AS creatorId,title,summary,concept,status,admin_feedback AS adminFeedback,updated_at AS updatedAt FROM creator_projects WHERE status IN ('submitted','changes_requested','approved_internal') ORDER BY updated_at DESC LIMIT 100").all(),
    env.DB.prepare("SELECT r.project_id AS projectId,r.kind,r.title,r.notes,r.status FROM creator_resources r JOIN creator_projects p ON p.id=r.project_id WHERE p.status IN ('submitted','changes_requested','approved_internal') ORDER BY r.updated_at DESC LIMIT 200").all(),
-   env.DB.prepare("SELECT action,target_type AS targetType,target_id AS targetId,created_at AS createdAt FROM staff_audit_events ORDER BY created_at DESC LIMIT 20").all()
+   env.DB.prepare("SELECT action,target_type AS targetType,target_id AS targetId,created_at AS createdAt FROM staff_audit_events ORDER BY created_at DESC LIMIT 100").all()
   ]);
   return staffJson({categories:categories.results,products:products.results,campaigns:campaigns.results,submissions:submissions.results,submissionResources:submissionResources.results,audit:auditEvents.results,liveOrders:false});
  }catch(error){return staffError(error);}

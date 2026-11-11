@@ -8,8 +8,9 @@ const $=id=>document.getElementById(id);
 const node=(tag,className,text)=>{const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=text;return element;};
 const label=value=>String(value||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 const date=value=>value?new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+const timestamp=value=>new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value)?value:value.replace(' ','T')+'Z');
 const slugify=value=>value.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
-const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_repository_url:'Enter an HTTPS Git repository URL without credentials.',invalid_documentation_url:'Enter an HTTPS link to the product documentation.',invalid_video_url:'Enter a YouTube HTTPS video URL.',invalid_input:'Check the form fields and try again.'};
+const messages={admin_verification_required:'Complete the separate Admin Desk security check and try again. Your draft has not been saved.',invalid_admin_verification:'The Admin Desk security check has expired. Open the admin page to renew it.',admin_verification_unavailable:'The Admin Desk security check is unavailable. Your draft has not been saved.',access_denied:'Your account does not have access to this workspace.',staff_database_unavailable:'The private database is not connected yet.',staff_access_not_configured:'Staff access has not been configured yet.',authentication_required:'Sign in to continue.',invalid_session:'Your session needs refreshing. Sign in again.',duplicate_record:'That ID or URL slug is already in use.',starter_slug_fixed:'The URL for this original project is fixed because it already has a public page.',submission_incomplete:'Add a longer summary, a full concept and at least one guide or parts-list note before submitting.',revision_required:'Update your project or a build note before submitting it again.',project_locked_for_review:'This project is locked while it is under review.',not_submitted:'This project is no longer waiting for review.',invalid_repository_url:'Enter an HTTPS Git repository URL without credentials.',invalid_documentation_url:'Enter an HTTPS link to the product documentation.',invalid_video_url:'Enter a YouTube HTTPS video URL.',invalid_evidence_url:'Use an HTTPS evidence link without credentials.',evidence_required:'Add a specific evidence note of at least 20 characters before marking this check verified.',checkout_not_connected:'A test order cannot be verified until test-mode checkout and order handling exist.',invalid_input:'Check the form fields and try again.'};
 function notice(message,error=false){const box=$('notice');box.textContent=message;box.classList.toggle('error',error);box.hidden=false;box.scrollIntoView({block:'nearest',behavior:'smooth'});}
 function errorMessage(error){return messages[error.message]||'The change could not be saved. Please try again.';}
 
@@ -38,15 +39,23 @@ async function api(method='GET',body){
  if(!response.ok)throw Error(payload.error||'temporarily_unavailable');
  return payload;
 }
+async function readinessApi(method='GET',body){
+ const token=await window.Clerk.session?.getToken();
+ if(!token)throw Error('invalid_session');
+ const response=await fetch('/api/admin/launch-readiness',{method,headers:{Authorization:'Bearer '+token,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+ const payload=await response.json().catch(()=>({error:'temporarily_unavailable'}));
+ if(!response.ok)throw Error(payload.error||'temporarily_unavailable');
+ return payload;
+}
 
-const viewTitles={overview:'Overview',products:'Products',categories:'Categories',marketing:'Marketing',review:'Creator review',activity:'Activity',projects:'My projects',resources:'Guides & files',submissions:'Review status'};
+const viewTitles={overview:'Overview',flight:'Flight Radar',products:'Products',categories:'Categories',marketing:'Marketing',review:'Creator review',activity:'Activity',projects:'My projects',resources:'Guides & files',submissions:'Review status'};
 const greeting=()=>{const hour=new Date().getHours();return hour<12?'Good morning, maker':hour<17?'Good afternoon, maker':'Good evening, maker';};
 function showView(name){
  if(!$('view-'+name))return;
  document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!=='view-'+name);
  document.querySelectorAll('[data-view]').forEach(e=>e.classList.toggle('active',e.dataset.view===name));
  $('breadcrumb-view').textContent=viewTitles[name];
- const headings={overview:portalKind==='admin'?[greeting(),'The practical work of getting My Little Project ready for launch.']:['Make something worth sharing','Develop an idea, gather its build notes and send it for a thoughtful review.'],products:['Products','Shape the catalogue, one product at a time.'],categories:['Categories','Give every build a place to belong.'],marketing:['Marketing plans','Plan the launch story.'],review:['Creator review','Thoughtful decisions for new ideas.'],activity:['Activity','Recent changes across the workspaces.'],projects:['My projects','A home for your next idea.'],resources:['Guides & file plans','Bring the build experience into focus.'],submissions:['Review status','See where your projects stand.']};
+ const headings={overview:portalKind==='admin'?[greeting(),'The practical work of getting My Little Project ready for launch.']:['Make something worth sharing','Develop an idea, gather its build notes and send them for a thoughtful review.'],flight:['Little Flight Radar','Validate the first kit and record the evidence behind every claim.'],products:['Products','Shape the catalogue, one product at a time.'],categories:['Categories','Give every build a place to belong.'],marketing:['Marketing plans','Plan the launch story.'],review:['Creator review','Thoughtful decisions for new ideas.'],activity:['Activity','Recent changes across the workspaces.'],projects:['My projects','A home for your next idea.'],resources:['Guides & file plans','Bring the build experience into focus.'],submissions:['Review status','See where your projects stand.']};
  $('page-title').textContent=headings[name][0]+'.';$('page-subtitle').textContent=headings[name][1];
  history.replaceState(null,'','#'+name);
 }
@@ -67,7 +76,11 @@ function activity(container,items){
  container.replaceChildren();if(!items?.length)return empty(container,'No changes recorded yet.');
  items.forEach(item=>{const wrapper=node('div','activity-row');wrapper.append(node('span','activity-icon','↗'));const copy=node('span');copy.append(node('span','',`${label(item.action)} · ${label(item.targetType)} · ${item.targetId}`),node('small','',date(item.createdAt)));wrapper.append(copy);container.append(wrapper);});
 }
-async function refresh(){data=await api();if(portalKind==='admin')renderAdmin();else renderCreator();$('top-status').textContent='Updated';}
+async function refresh(){
+ if(portalKind==='admin'){const [workspace,launch]=await Promise.all([api(),readinessApi()]);data={...workspace,launch};renderAdmin();}
+ else{data=await api();renderCreator();}
+ $('top-status').textContent='Updated';
+}
 function option(select,value,text){select.append(new Option(text,value));}
 function formValue(form,name){return form.elements.namedItem(name).value;}
 function setForm(form,values){Object.entries(values).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(!field)return;if(field.type==='checkbox')field.checked=Boolean(value);else field.value=value??'';});}
@@ -97,11 +110,44 @@ const catalogueStats=products=>({
  priceOpen:products.filter(p=>p.priceConfirmed!==1).length
 });
 function productNextAction(products){
+ const open=data.launch?.checks.find(check=>check.status!=='verified');
+ if(open)return `Flight Radar first: ${open.nextAction||open.action}`;
  const starters=products.filter(p=>['LP-001','LP-031'].includes(p.id));
  const unfinished=starters.find(p=>p.kitStage!=='ready'||p.priceConfirmed!==1||p.supplierStrategy==='undecided');
  if(unfinished)return `Next: confirm the build guide, parts, safety and price for ${unfinished.title}; update its stage, price and supplier decision here.`;
  if(products.length<30)return `Next: research and record ${30-products.length} more catalogue ideas, keeping affordable solder-free family builds at the centre.`;
  return 'Next: settle checkout, payment and fulfilment decisions before opening orders.';
+}
+function renderFlight(){
+ const checks=data.launch.checks,verified=checks.filter(x=>x.status==='verified').length;
+ $('flight-count').textContent=`${verified} of ${checks.length} checks recorded as verified`;
+ const first=checks.find(x=>x.status!=='verified');
+ $('flight-next').textContent=first?`Highest-priority next action: ${first.nextAction||first.action}`:'All checks marked verified. Review the evidence and the full test order before considering launch.';
+ $('overview-flight-count').textContent=`${verified} / ${checks.length} checks verified`;
+ $('overview-flight-next').textContent=first?first.nextAction||first.action:'Review evidence and test the complete order flow.';
+ const container=$('flight-checks');container.replaceChildren();
+ checks.forEach(check=>{
+  const card=node('form','flight-check');card.dataset.checkKey=check.checkKey;
+  const heading=node('div','flight-check-heading');heading.append(node('span','pill '+(check.status==='blocked'?'amber':check.status==='missing'?'grey':''),label(check.status)),node('h3','',check.title));
+  card.append(heading,node('p','',check.detail));
+  const fields=node('div','flight-fields');
+  const selectLabel=node('label','','Status');const select=node('select');select.name='status';
+  for(const [value,title] of [['missing','Missing'],['working','In progress'],['verified','Verified with evidence'],['blocked','Blocked']])select.append(new Option(title,value));
+  select.value=check.status;selectLabel.append(select);fields.append(selectLabel);
+  function field(title,name,value,multiline=false){const labelEl=node('label','',title);const input=node(multiline?'textarea':'input');input.name=name;input.maxLength=name==='evidenceNote'?1000:name==='evidenceUrl'?500:500;input.value=value||'';if(multiline)input.rows=2;else if(name==='evidenceUrl')input.type='url';labelEl.append(input);fields.append(labelEl);}
+  field('Evidence note · required to verify','evidenceNote',check.evidenceNote,true);
+  field('Evidence link · optional','evidenceUrl',check.evidenceUrl);
+  field('Decision still needed','decisionNote',check.decisionNote,true);
+  field('Specific next action','nextAction',check.nextAction,true);
+  card.append(fields);
+  const foot=node('div','flight-check-foot');foot.append(node('small','',check.updatedAt?'Updated '+date(check.updatedAt):'No evidence recorded yet'));
+  const save=node('button','button primary','Save check →');save.type='submit';foot.append(save);card.append(foot);
+  card.addEventListener('submit',async event=>{
+   event.preventDefault();if(!card.reportValidity())return;save.disabled=true;
+   try{await readinessApi('PATCH',{productId:'LP-001',checkKey:check.checkKey,status:select.value,evidenceNote:card.elements.namedItem('evidenceNote').value,evidenceUrl:card.elements.namedItem('evidenceUrl').value,decisionNote:card.elements.namedItem('decisionNote').value,nextAction:card.elements.namedItem('nextAction').value});await refresh();notice(`${check.title} updated. The same status is in the overview and launch snapshot.`);}
+   catch(error){notice(errorMessage(error),true);}finally{save.disabled=false;}
+  });container.append(card);
+ });
 }
 function renderProductList(){
  const products=$('products-list');products.replaceChildren();
@@ -115,9 +161,26 @@ function renderProductList(){
 function downloadLaunchSnapshot(){
  const stats=catalogueStats(data.products);
  const list=(items,make)=>items.length?items.map(make).join('\n'):'- None recorded';
+ const since=$('snapshot-since').value;
+ const recent=since?data.audit.filter(x=>timestamp(x.createdAt)>=new Date(since+'T00:00:00')):data.audit;
+ const flight=data.launch.checks;
+ const open=flight.filter(x=>x.status!=='verified');
  const lines=[
   '# My Little Project — launch snapshot',
   `Generated: ${new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})}`,
+  `Review changes since: ${since||'not specified'}`,
+  '',
+  '## First launch candidate · Little Flight Radar',
+  `- ${flight.length-open.length}/${flight.length} checks recorded as verified by the operator. This is not an independent certification.`,
+  `- Product stage: ${data.products.find(x=>x.id==='LP-001')?.kitStage||'not recorded'}; price: ${data.products.find(x=>x.id==='LP-001')?.priceConfirmed===1?'confirmed in product record':'unconfirmed'}; supplier: ${data.products.find(x=>x.id==='LP-001')?.supplierStrategy||'unrecorded'}.`,
+  '- Live checkout and customer entitlements are disabled.',
+  '',
+  '### Incomplete Flight Radar milestones and decisions',
+  list(open,x=>`- ${x.title}: ${label(x.status)}. Next: ${x.nextAction||x.action}${x.decisionNote?' Decision: '+x.decisionNote:''}`),
+  '',
+  '### Recorded evidence versus assumptions',
+  list(flight.filter(x=>x.status==='verified'),x=>`- ${x.title}: ${x.evidenceNote}${x.evidenceUrl?' ('+x.evidenceUrl+')':''} · updated ${date(x.updatedAt)}.`),
+  '- Other checks are unverified; notes and concepts are assumptions until tested.',
   '',
   '## Catalogue',
   `- ${stats.total}/30 product records; ${stats.ready} marked kit-stage ready.`,
@@ -128,8 +191,8 @@ function downloadLaunchSnapshot(){
   '## Incomplete product decisions',
   list(data.products.filter(p=>p.priceConfirmed!==1||p.supplierStrategy==='undecided'||p.kitStage!=='ready'),p=>`- ${p.title}: ${[p.kitStage!=='ready'?'kit stage '+p.kitStage:null,p.priceConfirmed!==1?'price unconfirmed':null,p.supplierStrategy==='undecided'?'supplier undecided':null].filter(Boolean).join('; ')}.`),
   '',
-  '## Recent recorded changes',
-  list(data.audit,a=>`- ${date(a.createdAt)}: ${label(a.action)} ${label(a.targetType)} (${a.targetId}).`),
+  '## Changes since selected review date',
+  list(recent,a=>`- ${date(a.createdAt)}: ${label(a.action)} ${label(a.targetType)} (${a.targetId}).`),
   '',
   '## Evidence and assumptions',
   '- Evidence: the product, category, campaign and activity counts above come from the private production workspace.',
@@ -148,6 +211,7 @@ function downloadLaunchSnapshot(){
  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function renderAdmin(){
+ renderFlight();
  $('metric-products').textContent=data.products.length;
  $('metric-categories').textContent=data.categories.filter(x=>x.active).length;
  $('metric-campaigns').textContent=data.campaigns.length;
@@ -191,6 +255,7 @@ function renderAdminSubmissions(){
  });
 }
 function bindAdminForms(){
+ $('snapshot-since').value=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
  for(const id of ['product-search','product-stage-filter','product-supplier-filter'])$(id).addEventListener(id==='product-search'?'input':'change',renderProductList);
  $('download-launch-snapshot').addEventListener('click',downloadLaunchSnapshot);
  for(const type of ['product','category','campaign']){

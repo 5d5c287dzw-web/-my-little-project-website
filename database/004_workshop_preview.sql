@@ -8,3 +8,13 @@ CREATE TABLE IF NOT EXISTS workshop_preview_progress (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(clerk_user_id, project_id)
 );
+
+-- Flight Radar uses a separate preview table because the existing RC Buggy
+-- table was created in production with an LP-031-only constraint.
+CREATE TABLE IF NOT EXISTS workshop_radar_preview_progress (
+  clerk_user_id TEXT NOT NULL,
+  project_id TEXT NOT NULL CHECK(project_id = 'LP-001'),
+  completed_stages TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(clerk_user_id, project_id)
+);
