@@ -12,6 +12,19 @@ export async function onRequestGet({request,env}){
     ORDER BY p.updated_at DESC LIMIT 100`;
   const statement=env.DB.prepare(query);
   const {results}=await (slug?statement.bind(slug):statement).all();
+  // Media is optional until the first authorised Admin Desk visit creates the table.
+  try{
+   const {results:photos}=await env.DB.prepare("SELECT target_id AS id,alt_text AS altText,caption,updated_at AS updatedAt FROM shop_media WHERE target_type='product' AND is_public=1 LIMIT 100").all();
+   const byId=new Map(photos.map(photo=>[photo.id,photo]));
+   for(const product of results){
+    const photo=byId.get(product.id);
+    if(photo&&photo.altText){
+     product.photoUrl='/api/product-photo?id='+encodeURIComponent(product.id)+'&v='+encodeURIComponent(photo.updatedAt);
+     product.photoAlt=photo.altText;
+     product.photoCaption=photo.caption;
+    }
+   }
+  }catch{ /* No product photo table yet; keep the concept artwork. */ }
   return json({products:results,available:true});
  }catch{return json({error:"catalogue_unavailable"},503);}
 }

@@ -10,6 +10,8 @@ import {onRequestGet as accountStatusGet} from '../functions/api/account-status.
 import {onRequestGet as workshopGet,onRequestPost as workshopPost,onRequestPatch as workshopPatch} from '../functions/api/workshop.js';
 import {onRequestGet as launchGet,onRequestPatch as launchPatch} from '../functions/api/admin/launch-readiness.js';
 import {onRequestPost as bomPost,onRequestPatch as bomPatch,onRequestDelete as bomDelete} from '../functions/api/admin/bom.js';
+import {onRequestGet as mediaGet,onRequestPost as mediaPost,onRequestPatch as mediaPatch,onRequestDelete as mediaDelete} from '../functions/api/admin/media.js';
+import {onRequestGet as publicPhotoGet} from '../functions/api/product-photo.js';
 import {onRequest as privatePage} from '../functions/_middleware.js';
 
 const origin='https://mylittleproject.co.uk';
@@ -53,6 +55,12 @@ const env={DB:d1,CLERK_ISSUER:issuer,CLERK_JWKS_URL:issuer+'/.well-known/jwks.js
 const request=(path,method='GET',session=null,body=null,cookie=false,proof=adminProof)=>new Request(origin+path,{method,headers:{...(session?{[cookie?'Cookie':'Authorization']:cookie?'__session='+session:'Bearer '+session}:{}),...(proof?{'Cf-Access-Jwt-Assertion':proof}:{}),...(body?{'Content-Type':'application/json','Origin':origin}:{})},body:body?JSON.stringify(body):undefined});
 const context=(path,method,session,body,proof=adminProof)=>({request:request(path,method,session,body,false,proof),env});
 const result=async response=>({status:response.status,body:await response.json()});
+const tinyPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lGQAAAAASUVORK5CYII=','base64');
+function photoRequest(session,{type,id,bytes=tinyPng,altText='',caption='',isPublic=false,proof=adminProof,mime='image/png'}={}){
+ const form=new FormData();form.set('type',type);form.set('id',id);
+ form.set('photo',new File([bytes],'photo.png',{type:mime}));form.set('altText',altText);form.set('caption',caption);form.set('isPublic',String(isPublic));
+ return {request:new Request(origin+'/api/admin/media',{method:'POST',headers:{Authorization:'Bearer '+session,Origin:origin,...(proof?{'Cf-Access-Jwt-Assertion':proof}:{})},body:form}),env};
+}
 
 test('public sign-in config rejects a Clerk key from another issuer',async()=>{
  const production='https://clerk.mylittleproject.co.uk';
@@ -163,6 +171,43 @@ test('private product BOM keeps sourced prices, availability and audit history o
  assert.equal('buyPricePence' in customerData.products.find(x=>x.id==='LP-001'),false);
  assert.equal((await result(await bomDelete(context('/api/admin/bom','DELETE',owner,{productId:'LP-001',id:created.body.id})))).status,200);
  assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body.bomItems.some(x=>x.id===created.body.id),false);
+});
+
+test('photos stay private until explicitly published on a visible product; part photos never leave admin',async()=>{
+ const owner=await token('user_admin'),creator=await token('user_creator_a');
+ const product={type:'product',slug:'photo-proof-project',title:'Photo proof project',categoryId:null,summary:'A photo test',description:'A current prototype photograph.',kitStage:'prototype',visibility:'preview',pricePence:null,priceConfirmed:false,supplierStrategy:'undecided'};
+ const created=await result(await adminPost(context('/api/admin/workspace','POST',owner,product)));
+ assert.equal(created.status,200);const id=created.body.id;
+ assert.equal((await result(await mediaPost(photoRequest(creator,{type:'product',id})))).status,403);
+ assert.equal((await result(await mediaPost(photoRequest(owner,{type:'product',id,proof:null})))).status,403);
+ assert.equal((await result(await mediaPost(photoRequest(owner,{type:'product',id,bytes:Buffer.from('not a real image'.repeat(3))})))).body.error,'invalid_image');
+ const upload=await result(await mediaPost(photoRequest(owner,{type:'product',id,altText:'Assembled kit on a desk'})));
+ assert.equal(upload.status,200);
+ const workspace=(await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body;
+ assert.equal(workspace.media.find(x=>x.targetId===id).isPublic,0);
+ assert.equal(JSON.stringify(workspace).includes('image_data'),false);
+ assert.equal((await result(await shopGet({request:request('/api/shop?slug=photo-proof-project'),env}))).body.products[0].photoUrl,undefined);
+ assert.equal((await publicPhotoGet({request:request('/api/product-photo?id='+id),env})).status,404);
+ assert.equal((await mediaGet(context('/api/admin/media?type=product&id='+id,'GET',creator))).status,403);
+ const privatePhoto=await mediaGet(context('/api/admin/media?type=product&id='+id,'GET',owner));
+ assert.equal(privatePhoto.status,200);assert.equal(privatePhoto.headers.get('Content-Type'),'image/png');
+ assert.deepEqual(Buffer.from(await privatePhoto.arrayBuffer()),tinyPng);
+ assert.equal((await result(await mediaPatch(context('/api/admin/media','PATCH',owner,{type:'product',id,altText:'',caption:'Prototype A',isPublic:true})))).status,400);
+ assert.equal((await result(await mediaPatch(context('/api/admin/media','PATCH',owner,{type:'product',id,altText:'Assembled prototype on a desk',caption:'Prototype A',isPublic:true})))).status,200);
+ const publicProduct=(await result(await shopGet({request:request('/api/shop?slug=photo-proof-project'),env}))).body.products[0];
+ assert.match(publicProduct.photoUrl,/^\/api\/product-photo\?id=/);assert.equal(publicProduct.photoAlt,'Assembled prototype on a desk');
+ const publicPhoto=await publicPhotoGet({request:request(publicProduct.photoUrl),env});
+ assert.equal(publicPhoto.status,200);assert.deepEqual(Buffer.from(await publicPhoto.arrayBuffer()),tinyPng);
+ assert.equal((await result(await adminPatch(context('/api/admin/workspace','PATCH',owner,{...product,id,visibility:'hidden'})))).status,200);
+ assert.equal((await publicPhotoGet({request:request(publicProduct.photoUrl),env})).status,404);
+ const part={productId:id,partName:'USB cable',kitRole:'core',quantityPerKit:1,packQuantity:1,buyPricePence:null,priceEvidence:'estimate',availability:'unknown',leadTimeDays:null,sourcingStatus:'research',sortOrder:1};
+ const savedPart=await result(await bomPost(context('/api/admin/bom','POST',owner,part)));assert.equal(savedPart.status,200);
+ assert.equal((await result(await mediaPost(photoRequest(owner,{type:'bom',id:savedPart.body.id,altText:'USB cable',isPublic:true})))).status,400);
+ assert.equal((await result(await mediaPost(photoRequest(owner,{type:'bom',id:savedPart.body.id,altText:'USB cable'})))).status,200);
+ assert.equal((await result(await shopGet({request:request('/api/shop'),env}))).body.products.every(x=>!('bomItems' in x)),true);
+ assert.equal((await result(await mediaDelete(context('/api/admin/media','DELETE',owner,{type:'product',id})))).status,200);
+ assert.equal((await result(await bomDelete(context('/api/admin/bom','DELETE',owner,{productId:id,id:savedPart.body.id})))).status,200);
+ assert.equal((await result(await adminGet(context('/api/admin/workspace','GET',owner)))).body.media.some(x=>x.targetId===savedPart.body.id),false);
 });
 
 test('creator records stay within the verified owner and review flow',async()=>{

@@ -94,3 +94,4 @@
 .preview-concept-symbol{position:relative;z-index:1;color:#40956e;font:500 clamp(150px,20vw,230px)/1 var(--serif);text-shadow:12px 18px 0 #bfd9c4}
 .preview-visual .product-visual-art:before{content:"";position:absolute;width:310px;height:250px;border:1px solid #9fc0a1;border-radius:50%;transform:rotate(18deg)}
 .preview-product-page .product-readiness .button{margin-top:15px}
+.preview-visual.has-photo{background:#e9f1e8}.preview-visual.has-photo .product-visual-art:before{display:none}.preview-visual.has-photo .product-visual-art img{width:100%;max-height:100%;object-fit:contain;filter:none}
