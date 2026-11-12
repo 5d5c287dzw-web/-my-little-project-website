@@ -17,4 +17,8 @@ Disallow: /account/
 Disallow: /api/
 Disallow: /projects/preview/
 
+# Keep OpenAI's model-training crawler separate from search discovery.
+User-agent: GPTBot
+Disallow: /
+
 Sitemap: https://mylittleproject.co.uk/sitemap.xml
