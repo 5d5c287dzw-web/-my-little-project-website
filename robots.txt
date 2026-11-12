@@ -1,4 +1,20 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /studio/
+Disallow: /workshop/
+Disallow: /account/
+Disallow: /api/
+Disallow: /projects/preview/
+
+# ChatGPT Search uses this crawler to discover and cite public pages.
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /studio/
+Disallow: /workshop/
+Disallow: /account/
+Disallow: /api/
+Disallow: /projects/preview/
 
 Sitemap: https://mylittleproject.co.uk/sitemap.xml
