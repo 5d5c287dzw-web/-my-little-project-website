@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#edf5ee"/><stop offset="1" stop-color="#dfece1"/></linearGradient>
+    <linearGradient id="dial" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#194e43"/><stop offset="1" stop-color="#267b60"/></linearGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.5" fill="#89a895" opacity=".42"/></pattern>
+  </defs>
+  <rect width="1200" height="630" rx="34" fill="url(#bg)"/>
+  <rect width="1200" height="630" rx="34" fill="url(#dots)"/>
+  <rect x="54" y="48" width="52" height="52" rx="15" fill="#20765b"/>
+  <text x="65" y="87" font-family="Georgia,serif" font-weight="bold" font-size="43" fill="white">m</text>
+  <path d="M94 82l4 7 8 1-6 5 1 8-7-4-7 4 2-8-6-5 8-1z" fill="#e0bd62"/>
+  <text x="124" y="72" font-family="Arial,sans-serif" font-weight="700" font-size="24" fill="#194e43">my little project.</text>
+  <text x="62" y="179" font-family="Arial,sans-serif" font-weight="700" font-size="17" letter-spacing="4" fill="#438366">FAMILY DIY ELECTRONICS + STEM KITS</text>
+  <text x="62" y="275" font-family="Georgia,serif" font-weight="bold" font-size="75" fill="#193f37">Buy the kit.</text>
+  <text x="62" y="365" font-family="Georgia,serif" font-style="italic" font-size="75" fill="#25815f">Build together.</text>
+  <text x="62" y="435" font-family="Arial,sans-serif" font-size="26" fill="#61796b">Keep going with planned project guidance and support.</text>
+  <rect x="62" y="492" width="436" height="46" rx="23" fill="#194e43"/>
+  <text x="84" y="522" font-family="Arial,sans-serif" font-weight="700" font-size="16" letter-spacing="1.5" fill="#fff">FIRST KITS IN DEVELOPMENT · ORDERS NOT OPEN</text>
+  <circle cx="935" cy="325" r="208" fill="#fff" opacity=".84"/>
+  <circle cx="935" cy="325" r="179" fill="url(#dial)" stroke="#819e8a" stroke-width="12"/>
+  <circle cx="935" cy="325" r="145" fill="none" stroke="#a4c5ae" stroke-opacity=".65" stroke-width="2"/>
+  <circle cx="935" cy="325" r="94" fill="none" stroke="#a4c5ae" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M935 147v356M757 325h356M809 199l252 252M1061 199 809 451" stroke="#a4c5ae" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M935 291l15 34-15 34-15-34z" fill="#e5c25f"/>
+  <circle cx="1021" cy="252" r="8" fill="#f2d77b"/><circle cx="864" cy="357" r="7" fill="#f2d77b"/><circle cx="1001" cy="403" r="7" fill="#f2d77b"/>
+  <text x="824" y="554" font-family="Arial,sans-serif" font-size="14" letter-spacing="2.5" fill="#587866">LOOK UP · BUILD · DISCOVER</text>
+</svg>

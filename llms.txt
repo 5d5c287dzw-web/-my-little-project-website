@@ -1,0 +1,21 @@
+# My Little Project
+
+> My Little Project is a UK brand developing family build-together DIY electronics and STEM kits, with a planned My Workshop companion for build guidance, project resources and ongoing support. The first kit concepts are Little Flight Radar and Little RC Buggy. The kits and Workshop are in development; orders are not open.
+
+## Public pages
+
+- [Shop kits and project concepts](https://mylittleproject.co.uk/projects/): Public catalogue of kit ideas and their current development status.
+- [Little Flight Radar](https://mylittleproject.co.uk/projects/little-flight-radar/): Family aircraft-tracking electronics kit concept.
+- [Little RC Buggy](https://mylittleproject.co.uk/projects/little-rc-buggy/): Build-and-drive RC buggy kit concept.
+- [Build & Race Twin Pack](https://mylittleproject.co.uk/projects/build-and-race-twin-pack/): Two-buggy family build concept.
+- [How My Workshop is planned to work](https://mylittleproject.co.uk/#my-workshop): Planned kit-linked guidance, resources and ongoing project support.
+- [Our story](https://mylittleproject.co.uk/about/): About the brand and its approach.
+- [For creators](https://mylittleproject.co.uk/creators/): Creator programme information; currently in development.
+- [Privacy policy](https://mylittleproject.co.uk/privacy-policy/): Information about privacy and newsletter subscriptions.
+
+## Current status
+
+- Public project pages describe concepts and development plans, not finished products available to buy.
+- Final kit contents, safety validation, prices, stock and launch dates are not confirmed on the public site.
+- My Workshop customer entitlements and support features are planned and are not live.
+- Concept illustrations are artwork, not photographs of finished kits.
