@@ -69,3 +69,16 @@ h1,h2{font-family:var(--serif);font-weight:600;line-height:1.13;letter-spacing:-
  .primary-nav .nav-cta{margin-top:9px;text-align:center}
 }
 #main, #build, #build-steps, #inside, #updates, #preview-status, #how-it-works{scroll-margin-top:88px}
+/* Little AI Rover prototype price ladder */
+.rover-editions{background:#f8f8f2}
+.rover-edition-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:2rem}
+.rover-edition{display:flex;flex-direction:column;align-items:flex-start;min-height:19rem;padding:1.6rem;border:1px solid #d9e4da;border-radius:1.1rem;background:#fff;box-shadow:0 12px 30px rgba(25,78,67,.05)}
+.edition-stage{color:#718d7d;font-size:.68rem;font-weight:700;letter-spacing:.15em}
+.rover-edition h3{margin:1.5rem 0 .5rem;color:#173e35;font-family:Fraunces,Georgia,serif;font-size:1.7rem}
+.rover-edition>strong{color:#21775c;font-size:1.12rem}
+.rover-edition p{color:#687e73;line-height:1.7}
+.edition-note{margin-top:auto;padding-top:1rem;color:#9b6c20;font-size:.78rem;font-weight:700}
+.rover-ai-note{max-width:900px;margin:2rem auto 0;padding:1.25rem 1.5rem;border-left:3px solid #e0b94e;background:#eff4ed;color:#526b60;line-height:1.7}
+.rover-ai-note strong{color:#173e35}
+.art-robot img{width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 20px 18px rgba(23,62,53,.14))}
+@media(max-width:760px){.rover-edition-grid{grid-template-columns:1fr}.rover-edition{min-height:0}.rover-edition h3{margin-top:1rem}}

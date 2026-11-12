@@ -8,6 +8,7 @@
 - [Little Flight Radar](https://mylittleproject.co.uk/projects/little-flight-radar/): Family aircraft-tracking electronics kit concept.
 - [Little RC Buggy](https://mylittleproject.co.uk/projects/little-rc-buggy/): Build-and-drive RC buggy kit concept.
 - [Build & Race Twin Pack](https://mylittleproject.co.uk/projects/build-and-race-twin-pack/): Two-buggy family build concept.
+- [Little AI Rover](https://mylittleproject.co.uk/projects/little-ai-rover/): Early solder-free family rover concept with three target budget editions. Prices and contents are unvalidated; the vision-AI idea needs a working privacy-reviewed prototype. Basic sensor routines are coding activities, not AI.
 - [How My Workshop is planned to work](https://mylittleproject.co.uk/#my-workshop): Planned kit-linked guidance, resources and ongoing project support.
 - [Our story](https://mylittleproject.co.uk/about/): About the brand and its approach.
 - [For creators](https://mylittleproject.co.uk/creators/): Creator programme information; currently in development.

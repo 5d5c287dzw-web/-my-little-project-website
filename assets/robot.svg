@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" fill="none">
+  <defs>
+    <linearGradient id="body" x1="180" y1="160" x2="450" y2="425" gradientUnits="userSpaceOnUse"><stop stop-color="#fff"/><stop offset="1" stop-color="#dcebe0"/></linearGradient>
+    <linearGradient id="screen" x1="245" y1="220" x2="405" y2="354" gradientUnits="userSpaceOnUse"><stop stop-color="#1c6657"/><stop offset="1" stop-color="#123f39"/></linearGradient>
+    <filter id="shadow" x="100" y="92" width="450" height="450" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="20"/></filter>
+  </defs>
+  <ellipse cx="326" cy="459" rx="180" ry="24" fill="#17493f" opacity=".16" filter="url(#shadow)"/>
+  <path d="M204 367h-27a34 34 0 1 0 0 68h34m251-68h27a34 34 0 1 1 0 68h-34" stroke="#275f50" stroke-width="17" stroke-linecap="round"/>
+  <circle cx="204" cy="401" r="32" fill="#173f38"/><circle cx="455" cy="401" r="32" fill="#173f38"/>
+  <path d="M180 236c0-26 21-47 47-47h203c26 0 47 21 47 47v140c0 25-20 45-45 45H225c-25 0-45-20-45-45V236Z" fill="#8db19a"/>
+  <path d="M194 220c0-28 22-50 50-50h169c28 0 50 22 50 50v133c0 28-22 50-50 50H244c-28 0-50-22-50-50V220Z" fill="url(#body)" stroke="#5f8d79" stroke-width="9"/>
+  <rect x="238" y="215" width="181" height="120" rx="34" fill="url(#screen)"/>
+  <circle cx="286" cy="266" r="14" fill="#f4d36f"/><circle cx="371" cy="266" r="14" fill="#f4d36f"/>
+  <path d="M290 302c15 16 63 16 78 0" stroke="#c9e5d1" stroke-width="9" stroke-linecap="round"/>
+  <path d="M319 170v-34m0 0-20 20m20-20 20 20" stroke="#275f50" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="319" cy="124" r="13" fill="#e1b84f"/>
+  <path d="M197 237h-29m281 0h29" stroke="#275f50" stroke-width="10" stroke-linecap="round"/>
+  <path d="m125 178 8 17 18 2-14 12 4 18-16-9-16 9 4-18-14-12 18-2 8-17Zm389 215 7 14 15 2-11 10 3 15-14-7-13 7 2-15-11-10 15-2 7-14Z" fill="#e2bf58"/>
+</svg>
