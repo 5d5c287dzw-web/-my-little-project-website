@@ -86,27 +86,41 @@ def head(title, description, path="/"):
   <meta property="og:title" content="{escape(title, quote=True)}">
   <meta property="og:description" content="{escape(description, quote=True)}">
   <meta property="og:url" content="{url}">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:image" content="https://mylittleproject.co.uk/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="My Little Project family DIY electronics and STEM kits, with the first concepts in development.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{escape(title, quote=True)}">
+  <meta name="twitter:description" content="{escape(description, quote=True)}">
+  <meta name="twitter:image" content="https://mylittleproject.co.uk/assets/social-card.png">
+  <meta name="twitter:image:alt" content="My Little Project family DIY electronics and STEM kits, with the first concepts in development.">
   <link rel="canonical" href="{url}">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/site.css?v=20261112-1">
+  <link rel="stylesheet" href="/assets/shop-refresh.css?v=20261111-3">
   <title>{escape(title)}</title>
 </head>'''
 
 def header(active=""):
     return f'''<body>
 <a class="skip-link" href="#main">Skip to content</a>
-<div class="announcement"><span class="sparkle">✳</span> A small shop for big discoveries <span class="announcement-divider">·</span> New kits are in development <span class="sparkle">✳</span></div>
+<div class="announcement"><span>FAMILY BUILD KITS + MY WORKSHOP · IN DEVELOPMENT</span><span class="announcement-divider">·</span><a href="/#updates">Get the launch notes <span aria-hidden="true">→</span></a></div>
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="/" aria-label="My Little Project home"><span class="brand-mark" aria-hidden="true"><span class="mark-stem">m</span><span class="mark-star">✦</span></span><span class="brand-type">my little<br><strong>project</strong><span class="brand-period">.</span></span></a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open menu"><span class="nav-toggle-icon" aria-hidden="true"><i></i><i></i><i></i></span><span class="nav-toggle-text" aria-hidden="true">Menu</span></button>
     <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
-      <a class="{'current' if active=='projects' else ''}" href="/projects/">Explore projects</a>
+      <a class="{'current' if active=='projects' else ''}" href="/projects/">Shop kits</a>
       <a href="/#how-it-works">How it works</a>
+      <a href="/creators/">For creators</a>
       <a class="{'current' if active=='about' else ''}" href="/about/">Our story</a>
+      <a class="nav-workshop" href="/workshop/">My Workshop</a>
+      <a class="nav-account" href="/account/">Account</a>
       <a class="nav-cta" href="/#updates">Get launch updates <span aria-hidden="true">→</span></a>
     </nav>
   </div>
